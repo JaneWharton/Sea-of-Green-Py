@@ -543,7 +543,7 @@ TEXT_TO_KEY = {     # translate text into key constants
     'kp2'       : tcod.KEY_KP2,
     'kp3'       : tcod.KEY_KP3,
     'kp4'       : tcod.KEY_KP4,
-    'k5p'       : tcod.KEY_KP5,
+    'kp5'       : tcod.KEY_KP5,
     'kp6'       : tcod.KEY_KP6,
     'kp7'       : tcod.KEY_KP7,
     'kp8'       : tcod.KEY_KP8,

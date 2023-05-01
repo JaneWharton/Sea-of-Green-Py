@@ -26,7 +26,7 @@ def main():
     rog.Rogue.create_log()
 ##    rog.Rogue.create_savedGame() # TODO: learn/use Pickle.
     rog.Rogue.create_processors()
-    rog.Rogue.create_perturn_managers()
+##    rog.Rogue.create_perturn_managers() # USE PROCESSORS.
     rog.Rogue.create_const_managers()
     rog.Rogue.create_const_entities()
 

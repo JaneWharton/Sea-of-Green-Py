@@ -29,6 +29,9 @@ class Name:
     def __init__(self, name=""):
         self.name=name
 class Value:
+    # cost of goods,
+    # amount of gold obtained when you kill enemy,
+    # amount of gold player currently has on them
     def __init__(self, value=1):
         self.value=value
 class Mass:
@@ -54,14 +57,15 @@ class Flags:
 class Mobility:
     def __init__(self, matrix=None):
 
-        # matrix: how much energy it costs to move in given direction
-        # If -1, you cannot move in that direction.
-        if matrix:
-            self.matrix = matrix
-        else:
-            self.matrix = [-1,-1,-1,
-                           -1,-1,-1,
-                           -1,-1,-1,]
+            # this only applies to NPCs:
+            # matrix: If 0, you cannot move in that direction.
+            # If >0, NPC can move more than 1 tile / turn.
+            if matrix:
+                self.matrix = matrix
+            else:
+                self.matrix = [0,0,0,
+                               0,0,0,
+                               0,0,0]
 
 class Creature:
     def __init__(self):
@@ -123,16 +127,63 @@ class Hull:
 
 class Modularity:
     def __init__(self):
-        self.modules = []
+        self.modules = {}
         self.num_slots = 3
         self.upgrade_kits = 0
     
 
 
 
+class Immune_Stun:
+    def __init__(self):
+        pass
+class Immune_Fear:
+    def __init__(self):
+        pass
+    
+class Immune_Sound:
+    def __init__(self):
+        pass
+class Resistant_Sound:
+    def __init__(self):
+        pass
+class Weakness_Sound:
+    def __init__(self):
+        pass
+class Immune_Physical:
+    def __init__(self):
+        pass
+class Resistant_Physical:
+    def __init__(self):
+        pass
+class Weakness_Physical:
+    def __init__(self):
+        pass
+class Immune_Electricity:
+    def __init__(self):
+        pass
+class Resistant_Electricity:
+    def __init__(self):
+        pass
+class Weakness_Electricity:
+    def __init__(self):
+        pass
+# no such thing as resistance or immunity to piercing damage
+class Weakness_Piercing:
+    def __init__(self):
+        pass
+
 class StatusElec:
     def __init__(self, duration=1):
         self.duration = duration
+class StatusStun:
+    def __init__(self, duration=1):
+        self.duration = duration
+class StatusInked:
+    def __init__(self, duration=1):
+        self.duration = duration
+
+
 
 
 

@@ -185,12 +185,14 @@ class _HUD_Stat(): # helper classes/ functions for the render functions
         self.color=color
 def _HUD_get_color(stat):
     col=COL['white']
-    if "HULL" in stat:
-        col=COL['yellow']
-    elif "O2" in stat:
+    if chr(130) in stat: # HULL
+        col=COL['scarlet']
+    elif chr(129) in stat: # O2
         col=COL['blue']
-    elif "POW" in stat:
+    elif chr(150) in stat: # POWer
         col=COL['green']
+    if "$" in stat:
+        col=COL['gold']
     return col
 def _getheight():
     return rog.world().component_for_entity(rog.pc(), cmp.Body).height
@@ -1060,37 +1062,46 @@ def render_hud(w,h,pc,turn,dlvl):
     world = rog.world()
     con = libtcod.console_new(w,h)
     name = world.component_for_entity(pc, cmp.Name)
-    strngStats = "__{name}__|HULL: {hp}|O2: {o2}|POW: {pw}|DLvl: {dlv}|{t}".format(
+    strngStats = "__{name}__|HULL {hp}|O2 {o2}|POW {pw}|$ {g}|DLvl: {dlv}|T: {t}".format(
         name=name.name,
         dlv=dlvl,t=turn,
         hp=world.component_for_entity(pc, cmp.Hull).hp,
         o2=world.component_for_entity(pc, cmp.OxygenTank).oxygen,
-        pw=world.component_for_entity(pc, cmp.Battery).energy
+        pw=world.component_for_entity(pc, cmp.Battery).energy,
+        g=world.component_for_entity(pc, cmp.Value).value
     )
+    # replace with custom special characters
+    strngStats = strngStats.replace("HULL", "{} ".format(chr(130)))
+    strngStats = strngStats.replace("O2", "{} ".format(chr(129)))
+    strngStats = strngStats.replace("POW", "{} ".format(chr(150)))
+    # split into list
     stats=strngStats.split('|')
     statLines=[[]]
-    tot=0
+    totx=0
     y=0
     for stat in stats:
         lenStat=len(stat) + 1
         col=_HUD_get_color(stat)
-        new=_HUD_Stat(tot, y, stat, col)
-        tot += lenStat
-        if tot >= rog.window_w():
-            tot=lenStat
-            y += 1 # draw on next line
+        new=_HUD_Stat(totx, y, stat, col)
+        totx += lenStat
+        if totx >= rog.window_w(): # draw on next line
+            totx=lenStat
+            y += 1
             new.x=0; new.y=y
             statLines.append([new])
             continue
         statLines[-1].append(new)
+    #
     
-    
-    # Print #
+    # Draw output #
     for line in statLines:
         for stat in line:
             if stat.y > h-1: continue
             libtcod.console_set_default_foreground(con, stat.color)
             libtcod.console_print(con, stat.x,stat.y, stat.text)
+            # place any special characters
+            if ord(stat.text[0]) >= 129:
+                con.put_char(stat.x,stat.y, ord(stat.text[0]))
     #
     
     return con

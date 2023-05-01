@@ -151,6 +151,7 @@ class Rogue:
             # todo: update event manager to account for sights, sounds, etc.
         cls.c_managers.update({'lights' : managers.Manager_Lights()})
         cls.c_managers.update({'fov' : managers.Manager_FOV()})
+        cls.c_managers.update({'refresh' : managers.Manager_Refresh()})
 
     @classmethod
     def create_const_entities(cls):
@@ -174,6 +175,8 @@ class Rogue:
     # Rogue
 def const_ent(ent): return Rogue.c_entities[ent]
 def _ent_stone_wall(): return const_ent(ENT_STONE_WALL)
+def run_refresh_managers(): # run every time ANY input is received
+    Rogue.c_managers['refresh'].run()
 
 # global warning flags
 def allow_warning_msp():
@@ -257,6 +260,8 @@ def grid_insert(ent): #add thing to the grid of things
     return Rogue.map.add_thing(ent)
 def grid_fluids_insert(obj):    Rogue.map.grid_fluids[obj.x][obj.y].append(obj)
 def grid_fluids_remove(obj):    Rogue.map.grid_fluids[obj.x][obj.y].remove(obj)
+def increment_wave_functions():
+    Rogue.map.increment_wave_functions()
 
 # updater
 def update_base():      Rogue.update.base()
@@ -554,8 +559,10 @@ def take(ent,item):
     if Rogue.world.has_component(item, cmp.Held):
         Rogue.world.remove_component(item, cmp.Held)
 
-def add_module(ent, module): # add a gear module to Modularity component
-    entities.add_module(ent, module)
+def add_module(ent, slot, module): # add gear module to Modularity component
+    entities.add_module(ent, slot, module)
+def remove_module(ent, slot): # remove gear module from Modularity component
+    entities.remove_module(ent, slot)
 
 
 def has_sight(ent):

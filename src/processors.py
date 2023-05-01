@@ -90,7 +90,7 @@ return timer
 # Stats Upkeep processor
 #
 
-class UpkeepProcessor(esper.Processor): # TODO: test this
+class UpkeepProcessor(esper.Processor):
     def process(self):
         # just query some components that match entities
         
@@ -109,7 +109,6 @@ class UpkeepProcessor(esper.Processor): # TODO: test this
             if compo.hp <= 0:
                 rog.make(ent, DEAD)
 # end class
-
 
 
 

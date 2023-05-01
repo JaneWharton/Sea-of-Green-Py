@@ -160,13 +160,35 @@ def commands(pc, pcAct):
             dx,dy,dz=arg
             pos = world.component_for_entity(pc, cmp.Position)
             actor = world.component_for_entity(pc, cmp.Actor)
-            xto=pos.x + dx
-            yto=pos.y + dy
 
             # wait
-            if (xto==pos.x and yto==pos.y):
+            if (dx==0 and dy==0):
                 actor.ap = 0
                 return
+
+            can_move = False
+            modular = world.component_for_entity(pc, cmp.Modularity)
+            modules = []
+            energy_cost = 0
+            volume = 0
+            permitted_directions = []
+            for i in range(1, 4):
+                modules.append(modular.modules.get(i, None))
+            for module in modules:
+                if module == None:
+                    continue
+                permitted_directions = module.MOVE_DIRECTIONS
+                if ((dx,dy) in permitted_directions):
+                    energy_cost = module.get_energy()
+                    volume = module.get_volume()
+                    can_move = True
+                    break
+
+            if not can_move:
+                return
+            
+            xto=pos.x + dx
+            yto=pos.y + dy
 
             # out of bounds
             if ( not rog.is_in_grid_x(xto) or not rog.is_in_grid_y(yto) ):
@@ -175,6 +197,14 @@ def commands(pc, pcAct):
             if not rog.solidat(xto,yto):
                 # space is free, so we can move
                 action.move(pc, dx,dy)
+
+                     #TODO
+                # expend energy
+                print("energy: ", energy_cost)
+                # make sound
+                print("volume: ", volume)
+
+                
             else:
                 rog.alert("That space is occupied.")
         # end conditional
@@ -347,9 +377,10 @@ def chargen(sx, sy):
         cmp.Actor(),
         cmp.Name(Chargen._name),
         cmp.Position(sx,sy),
-        cmp.Image(2, COL['accent'], COL['black']),
+        cmp.Image(1, COL['accent'], COL['black']),
         cmp.Mass(MASS_PLAYER),
         cmp.Human(),
+        cmp.Value(20),
         cmp.Mobility(),
         cmp.OxygenTank(0),
         cmp.Battery(0),
@@ -360,9 +391,9 @@ def chargen(sx, sy):
         cmp.Flags(),
         cmp.Modularity()
         )
-    rog.add_module(player_ent, entities.Gear_Screw())
-    rog.add_module(player_ent, entities.Gear_BallastTank())
-    rog.add_module(player_ent, entities.Gear_Torpedo())
+    rog.add_module(player_ent, 1, entities.Gear_Torpedo())
+    rog.add_module(player_ent, 2, entities.Gear_Screw())
+    rog.add_module(player_ent, 3, entities.Gear_BallastTank())
     
     return player_ent
 

@@ -147,6 +147,16 @@ NVISION = Symbol()
 DMG_PHYSICAL = Symbol()
 DMG_SOUND = Symbol()
 DMG_ELECTRIC = Symbol()
+DMG_PIERCING = Symbol() # armor piercing
+
+
+### movement types
+##
+##MOVEMENT_NONE = Symbol()
+##MOVEMENT_HORIZONTAL = Symbol()
+##MOVEMENT_VERTICAL = Symbol()
+##MOVEMENT_CARDINAL = Symbol()
+##MOVEMENT_DIAGONAL = Symbol()
 
 
 
@@ -167,12 +177,12 @@ GEAR_ELECTRIFIER = Symbol()
 
 OXYGEN_TIERS={
     # tier  : cost, oxygen max
-    0       : (5,   80,),
-    1       : (25,  160,),
-    2       : (125, 320,),
-    3       : (500, 640,),
-    4       : (1500,1280,),
-    5       : (3500,2560,),
+    0       : (5,   120,),
+    1       : (25,  240,),
+    2       : (125, 480,),
+    3       : (500, 960,),
+    4       : (1500,1920,),
+    5       : (3500,3840,),
 }
 BATTERY_TIERS={
     # tier  : cost, energy max
@@ -204,33 +214,19 @@ HULL_TIERS={
 TREASURE={
     # depth : (%spawnRate, minGold, maxGold,),
     1       : (3,   1,  10,),
-    2       : (4,   2,  20,),
-    3       : (5,   4,  30,),
-    4       : (6,   6,  40,),
-    5       : (7,   8,  50,),
-    6       : (8,   10, 60,),
-    7       : (9,   12, 70,),
-    8       : (10,  14, 80,),
-    9       : (11,  16, 90,),
-    10      : (12,  18, 100,),
+    2       : (4,   2,  30,),
+    3       : (5,   4,  50,),
+    4       : (5,   6,  60,),
+    5       : (6,   8,  70,),
+    6       : (6,   10, 80,),
+    7       : (7,   12, 90,),
+    8       : (7,   14, 100,),
+    9       : (8,   16, 110,),
+    10      : (8,   18, 120,),
 }
 
 
-# maybe we don't even need this at all
-# move to different file
-##GEAR={
-##    # const             :( name, GearComponent, create script, equip script, use script
-##    GEAR_PROPELLER      :("Propeller", Gear_Propeller, create_gear_propeller, equip_propeller, None,),
-##    GEAR_BALLASTTANK    :("Ballast Tank", Gear_BallastTank, create_gear_ballast_tank, equip_ballast_tank, None,),
-##    GEAR_SONARPULSE     :("Sonar Pulse", Gear_SonarPulse, create_gear_sonar_pulse, None, use_sonar_pulse,),
-##    GEAR_TORPEDO        :("Torpedos", Gear_Torpedo, create_gear_torpedo, None, use_torpedo,),
-##    GEAR_MINE           :("Mines", Gear_Mine, create_gear_mine, None, use_mine,),
-##    GEAR_DEPTHCHARGE    :("Depth Charge", Gear_DepthCharge, create_gear_depth_charge, None, use_depth_charge,),
-##    GEAR_GRAPPLINGHOOK  :("Grappling Hook", Gear_GrapplingHook, create_gear_grappling_hook, None, use_grappling_hook,),
-##}
-##ENGINES={
-##    ENGINE_NUCLEAR      :("Thermonuclear Engine", 40, 2,),
-##}
+
 
 
 

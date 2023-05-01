@@ -179,6 +179,17 @@ class Event_Sound():
 
 
 
+class Manager_Refresh(Manager):
+    def __init__(self):
+        super(Manager_Refresh,self).__init__()
+
+    def run(self):
+        super(Manager_Refresh,self).run()
+    
+        rog.increment_wave_functions()
+        
+
+
 #
 #
 #

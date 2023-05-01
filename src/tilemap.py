@@ -117,8 +117,12 @@ RENDERER:
         self.BG_COLOR_MAIN = COL['deep']
         #baseTemp=32 # room temperature #should not be stored in tilemap object
         self.grid_terrain =     [ [ None for y in range(h)] for x in range(w) ]
+        self.ocean_wave = 0
 ##        self.levels = {}
     # end def
+    
+    def increment_wave_functions(self):
+        self.ocean_wave += 1
 
     # functions to get information about generic tile types #
     
@@ -144,8 +148,9 @@ RENDERER:
     def get_color(self,x,y):        return COL[self.grid_terrain[x][y].fg]
     def get_bgcolor(self,x,y):
         if self.tileat(x,y) == TILE_OCEAN:
-            choices=['dkteal','vdkgreen','ocean','deep']
-            bgCol=COL[choices[misc.dice_roll(len(choices)) - 1]]
+            choices=['deep','ocean','vdkgreen','dkteal']
+            index = (x + y//2 + self.ocean_wave + round(random.random()*1.2)) % 4
+            bgCol=COL[choices[index]]
         else: bgCol=COL[ self.grid_terrain[x][y].bg ]
         return bgCol
     
