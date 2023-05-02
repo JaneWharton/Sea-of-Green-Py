@@ -2,6 +2,8 @@
     const.py
 '''
 
+
+
 class Symbol:
     nextID = 1
     def __init__(self):
@@ -139,6 +141,7 @@ DEAD = Symbol()
 BLIND = Symbol()
 DEAF = Symbol()
 NVISION = Symbol()
+ISSOLID = Symbol()
 
 
 
@@ -168,11 +171,13 @@ GEAR_BALLASTTANK = Symbol()
 GEAR_CONTROLSURFACE = Symbol()
 GEAR_SONARPULSE = Symbol()
 GEAR_TORPEDO = Symbol()
+GEAR_SUPERTORPEDO = Symbol()
 GEAR_MINE = Symbol()
 GEAR_DEPTHCHARGE = Symbol()
 GEAR_HARPOON = Symbol()
 GEAR_INKCLOUD = Symbol()
 GEAR_ELECTRIFIER = Symbol()
+##GEAR_SCANNER = Symbol()
 
 
 OXYGEN_TIERS={
@@ -225,6 +230,12 @@ TREASURE={
     10      : (8,   18, 120,),
 }
 
+
+
+# ANIMATIONS
+
+# [FPS, [list of chars]]
+ANIM_BOOM = [15,[249,42,164,148,159,159]]
 
 
 

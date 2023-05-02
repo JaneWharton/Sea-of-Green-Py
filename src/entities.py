@@ -4,12 +4,28 @@
 '''
 
 import esper
+import random
 
+from colors import COLORS as COL
 from const import *
 import components as cmp
 import rogue as rog
+import ai
 import game
 
+
+def create_bubbles(x,y):
+    world=rog.world()
+    ent = world.create_entity(
+        cmp.Name("bubbles"),
+        cmp.Image(random.choice((19,20,)), COL['accent'], COL['black']),
+        cmp.Actor(),
+        cmp.AI(ai.ai_rise),
+        cmp.Position(x,y),
+        cmp.Opaque(),
+        cmp.Flags()
+        )
+    return ent
 
 def create_npc(x,y):
     world=rog.world()
@@ -29,7 +45,7 @@ def create_angelfish(x,y):
     world.add_component(ent, cmp.Name("angelfish"))
     world.add_component(ent, cmp.Image(5, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(20))
-    world.add_component(ent, cmp.AI("curious"))
+    world.add_component(ent, cmp.AI(ai.ai_curious))
     world.add_component(ent, cmp.Value(10))
     world.add_component(ent, cmp.Mobility([0,1,0,
                                            1,1,1,
@@ -44,7 +60,7 @@ def create_angler(x,y):
     world.add_component(ent, cmp.Name("angler"))
     world.add_component(ent, cmp.Image(6, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(50))
-    world.add_component(ent, cmp.AI("hunter"))
+    world.add_component(ent, cmp.AI(ai.ai_hunter))
     world.add_component(ent, cmp.Value(75))
     world.add_component(ent, cmp.Mobility([1,0,1,
                                            1,1,1,
@@ -59,7 +75,7 @@ def create_barracudas(x,y):
     world.add_component(ent, cmp.Name("barracudas"))
     world.add_component(ent, cmp.Image(7, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(30))
-    world.add_component(ent, cmp.AI("swarm"))
+    world.add_component(ent, cmp.AI(ai.ai_swarm))
     world.add_component(ent, cmp.Value(20))
     world.add_component(ent, cmp.Mobility([1,0,1,
                                            0,1,0,
@@ -74,7 +90,7 @@ def create_seadragon(x,y):
     world.add_component(ent, cmp.Name("seadragon"))
     world.add_component(ent, cmp.Image(8, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(200))
-    world.add_component(ent, cmp.AI("hunter"))
+    world.add_component(ent, cmp.AI(ai.ai_hunter))
     world.add_component(ent, cmp.Value(150))
     world.add_component(ent, cmp.Mobility([1,1,1,
                                            1,1,1,
@@ -89,7 +105,7 @@ def create_crocodile(x,y):
     world.add_component(ent, cmp.Name("crocodile"))
     world.add_component(ent, cmp.Image(9, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(150))
-    world.add_component(ent, cmp.AI("hunter"))
+    world.add_component(ent, cmp.AI(ai.ai_hunter))
     world.add_component(ent, cmp.Value(60))
     world.add_component(ent, cmp.Mobility([0,1,0,
                                            2,1,2,
@@ -104,7 +120,7 @@ def create_shark(x,y):
     world.add_component(ent, cmp.Name("shark"))
     world.add_component(ent, cmp.Image(16, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(300))
-    world.add_component(ent, cmp.AI("hunter"))
+    world.add_component(ent, cmp.AI(ai.ai_hunter))
     world.add_component(ent, cmp.Value(200))
     world.add_component(ent, cmp.Mobility([1,0,1,
                                            2,1,2,
@@ -119,7 +135,7 @@ def create_ray(x,y):
     world.add_component(ent, cmp.Name("ray"))
     world.add_component(ent, cmp.Image(17, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(150))
-    world.add_component(ent, cmp.AI("curious"))
+    world.add_component(ent, cmp.AI(ai.ai_curious))
     world.add_component(ent, cmp.Value(20))
     world.add_component(ent, cmp.Mobility([1,0,1,
                                            1,1,1,
@@ -134,7 +150,7 @@ def create_bonefish(x,y):
     world.add_component(ent, cmp.Name("bonefish"))
     world.add_component(ent, cmp.Image(140, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(10))
-    world.add_component(ent, cmp.AI("support")) # hang back, attack occasionally
+    world.add_component(ent, cmp.AI(ai.ai_support)) # hang back, attack occasionally
     world.add_component(ent, cmp.Value(25))
     world.add_component(ent, cmp.Mobility([0,1,0,
                                            1,1,1,
@@ -149,7 +165,7 @@ def create_turtle(x,y):
     world.add_component(ent, cmp.Name("turtle"))
     world.add_component(ent, cmp.Image(141, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(300))
-    world.add_component(ent, cmp.AI("docile"))
+    world.add_component(ent, cmp.AI(ai.ai_docile))
     world.add_component(ent, cmp.Value(100))
     world.add_component(ent, cmp.Mobility([1,0,1,
                                            1,1,1,
@@ -164,7 +180,7 @@ def create_pufferfish(x,y):
     world.add_component(ent, cmp.Name("pufferfish"))
     world.add_component(ent, cmp.Image(142, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(25))
-    world.add_component(ent, cmp.AI("puff")) # changes to chr 143 
+    world.add_component(ent, cmp.AI(ai.ai_puff)) # changes to chr 143 
     world.add_component(ent, cmp.Value(70))
     world.add_component(ent, cmp.Mobility([0,1,0,
                                            1,1,1,
@@ -179,7 +195,7 @@ def create_eel(x,y):
     world.add_component(ent, cmp.Name("eel"))
     world.add_component(ent, cmp.Image(144, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(40))
-    world.add_component(ent, cmp.AI("electrify"))
+    world.add_component(ent, cmp.AI(ai.ai_electrify))
     world.add_component(ent, cmp.Value(150))
     world.add_component(ent, cmp.Mobility([1,1,1,
                                            0,1,0,
@@ -194,7 +210,7 @@ def create_goldfish(x,y):
     world.add_component(ent, cmp.Name("goldfish"))
     world.add_component(ent, cmp.Image(224, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(30))
-    world.add_component(ent, cmp.AI("curious"))
+    world.add_component(ent, cmp.AI(ai.ai_curious))
     world.add_component(ent, cmp.Value(5))
     world.add_component(ent, cmp.Mobility([0,1,0,
                                            1,1,1,
@@ -209,7 +225,7 @@ def create_seahorse(x,y):
     world.add_component(ent, cmp.Name("seahorse"))
     world.add_component(ent, cmp.Image(225, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(20))
-    world.add_component(ent, cmp.AI("fearful"))
+    world.add_component(ent, cmp.AI(ai.ai_fearful))
     world.add_component(ent, cmp.Value(80))
     world.add_component(ent, cmp.Mobility([1,0,1,
                                            0,1,0,
@@ -224,7 +240,7 @@ def create_octopus(x,y):
     world.add_component(ent, cmp.Name("octopus"))
     world.add_component(ent, cmp.Image(234, COL['accent'], COL['black']))
     world.add_component(ent, cmp.Mass(150))
-    world.add_component(ent, cmp.AI("curious"))
+    world.add_component(ent, cmp.AI(ai.ai_curious))
     world.add_component(ent, cmp.Value(300))
     world.add_component(ent, cmp.Mobility([1,1,1,
                                            1,1,1,
@@ -313,29 +329,34 @@ class Gear:
 
 class Gear_Screw(Gear):
     NAME = "Screw"
-    DESCRIPTION = "Permits horizontal movement."
+    DESCRIPTION = "Permits horizontal movement and rapid dashing; quite loud."
     __ID = GEAR_SCREW
     __COST = 50
-    ENERGY = [8, 7, 6, 5] # Level 0, 1, 2, 3
-    VOLUME = [48, 40, 32, 24]
+    __CHAR = 160
+    ENERGY = [8, 7, 6, 6] # Level 0, 1, 2, 3
+    VOLUME = [48, 40, 32, 32]
     MOVE_DIRECTIONS = [(-1,0),(1,0)]
+    MOVE = [2, 2, 2, 3] # when you Use the Screw (dash) you can move up to this many tiles
+        # dash uses +8 energy per tile moved, and doubles the volume.
     def __init__(self):
         self.level = 0
 class Gear_BallastTank(Gear): 
     NAME = "Ballast Tanks"
-    DESCRIPTION = "Permits vertical movement."
+    DESCRIPTION = "Permits silent vertical movement."
     __ID = GEAR_BALLASTTANK
     __COST = 50
+    __CHAR = 161
     ENERGY = [7, 6, 5, 4]
-    VOLUME = [6, 5, 4, 3]
+    VOLUME = [6, 4, 2, 0]
     MOVE_DIRECTIONS = [(0,-1),(0,1)]
     def __init__(self):
         self.level = 0
 class Gear_PumpJet(Gear):
     NAME = "Pump-Jets"
-    DESCRIPTION = "Permits cardinal movement."
+    DESCRIPTION = "Permits quiet cardinal movement. Drains batteries quickly."
     __ID = GEAR_PUMPJET
     __COST = 200
+    __CHAR = 162
     ENERGY = [10, 9, 8, 7] # Level 0, 1, 2, 3
     VOLUME = [12, 10, 8, 6]
     MOVE_DIRECTIONS = [(-1,0),(1,0),(0,1),(0,-1)]
@@ -346,6 +367,7 @@ class Gear_ControlSurfaces(Gear):
     DESCRIPTION = "Permits diagonal movement."
     __ID = GEAR_CONTROLSURFACE
     __COST = 150
+    __CHAR = 163
     ENERGY = [9, 8, 7, 6] # Level 0, 1, 2, 3
     VOLUME = [24, 20, 16, 12]
     MOVE_DIRECTIONS = [(-1,-1),(1,1),(-1,1),(1,-1)]
@@ -361,6 +383,7 @@ class Gear_SonarPulse(Gear):  # AOE damage around player;
     DESCRIPTION = "AoE damage around sub. Induces various status effects."
     __ID = GEAR_SONARPULSE
     __COST = 100
+    __CHAR = 164
     ENERGY = [80, 90, 100, 110]
     DAMAGE = [1, 1, 1, 1]
     RANGE = [3, 4, 5, 6] # radius
@@ -372,9 +395,10 @@ class Gear_SonarPulse(Gear):  # AOE damage around player;
 class Gear_InkJet(Gear):  # Shoot ink in target cardinal direction, and move in the opposite direction
                     # Ink coats target, blinding them. Also obscures vision
     NAME = "Ink Jets"
-    DESCRIPTION = ""
+    DESCRIPTION = "Shoot blinding ink; launch self in the opposite direction."
     __ID = GEAR_INKCLOUD
     __COST = 150
+    __CHAR = 165
     ENERGY = [12, 11, 10, 9]
     DAMAGE = [0, 0, 0, 1]
     MOVE = [1, 2, 3, 4] # maximum amount of tiles you can move
@@ -385,9 +409,10 @@ class Gear_InkJet(Gear):  # Shoot ink in target cardinal direction, and move in 
         self.level = 0
 class Gear_Torpedo(Gear): # create bubbles behind player; fire missile forward cardinal direction
     NAME = "Torpedos"
-    DESCRIPTION = ""
+    DESCRIPTION = "Launch missile in horizontal dir.; create bubbles behind."
     __ID = GEAR_TORPEDO
     __COST = 100
+    __CHAR = 166
     ENERGY = [1, 1, 1, 1]
     DAMAGE = [2, 2, 2, 2]
     USES = [4, 8, 12, 16]
@@ -400,9 +425,10 @@ class Gear_SuperTorpedo(Gear): # create bubbles all along path of missile;
                          # fire missile forward cardinal direction
                          # destroys walls on contact
     NAME = "Super Torpedos"
-    DESCRIPTION = ""
-    __ID = GEAR_TORPEDO
+    DESCRIPTION = "Launch deadly missile in horiozontal dir.; bubbles along path."
+    __ID = GEAR_SUPERTORPEDO
     __COST = 500
+    __CHAR = 167
     ENERGY = [2, 2, 2, 2]
     DAMAGE = [4, 5, 6, 7]
     USES = [2, 3, 4, 5]
@@ -416,6 +442,7 @@ class Gear_Mine(Gear): # move up one tile; drop single-target mine downward. Stu
     DESCRIPTION = "Move up one tile and drop a stunning mine downward."
     __ID = GEAR_MINE
     __COST = 150
+    __CHAR = 168
     ENERGY = [0, 0, 0, 0]
     DAMAGE = [1, 1, 1, 1]
     USES = [10, 15, 20, 30]
@@ -426,10 +453,12 @@ class Gear_Mine(Gear): # move up one tile; drop single-target mine downward. Stu
         self.level = 0
         self.quantity = self.USES[0]
 class Gear_DepthCharge(Gear): # drop powerful time bomb that detonates within a small blast radius
+                                # destroys walls in blast radius
     NAME = "Depth Charges"
     DESCRIPTION = "Drop a powerful time bomb with a small blast radius."
     __ID = GEAR_DEPTHCHARGE
     __COST = 300
+    __CHAR = 169
     ENERGY = [0, 0, 0, 0]
     DAMAGE = [2, 2, 3, 3]
     RANGE = [2, 2, 2, 3] # blast radius size
@@ -444,9 +473,10 @@ class Gear_Harpoon(Gear): # shoot missile forward cardinal direction
                     # pull target to player, or player to target based on mass
                     # moves up to X squares based on level
     NAME = "Harpoon"
-    DESCRIPTION = "Fire harpoon in horizontal dir., pulling the target closer."
+    DESCRIPTION = "Fire harpoon in horizontal dir. to pull things in."
     __ID = GEAR_HARPOON
     __COST = 500
+    __CHAR = 170
     ENERGY = [28, 26, 24, 22]
     DAMAGE = [1, 1, 1, 1]
     RANGE = [5, 10, 20, 30]
@@ -460,6 +490,7 @@ class Gear_Electrifier(Gear): # shock adjacent target to left or right
     DESCRIPTION = "Shocks and stuns adjacent target in horizontal direction."
     __ID = GEAR_ELECTRIFIER
     __COST = 200
+    __CHAR = 171
     ENERGY = [50, 60, 70, 80]
     DAMAGE = [2, 2, 3, 4]
     STUN = [3, 5, 6, 7]
@@ -475,4 +506,27 @@ class Gear_(Gear):
     def __init__(self):
         self.level = 1
 
-    
+
+
+# animation
+
+def animate(ent):
+    world = rog.world()
+    animation = world.component_for_entity(ent, cmp.Animation)
+    image = world.component_for_entity(ent, cmp.Image)
+    animation.index += 1
+    image.char = animation.charList[int(animation.index)]
+    listLen = len(animation.charList)
+    if animation.looping:
+        animation.index = animation.index % listLen
+    elif animation.index >= listLen - 1:
+        rog.release_entity(ent)
+##        print("RELEASE")
+##        animation.index = listLen - 1
+##    image.char = animation.charList[int(animation.index)]
+
+
+
+
+
+

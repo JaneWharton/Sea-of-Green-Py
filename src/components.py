@@ -2,6 +2,14 @@
 from const import *
 
 
+class DeathFunction:
+    def __init__(self, func):
+        self.func=func
+
+class Opaque: # obscures vision (NOT IMPLEMENTED)
+    def __init__(self):
+        pass
+
 class Position:
     def __init__(self, x=0,y=0):
         self.x=x
@@ -12,14 +20,21 @@ class Image:
         self.char = char
         self.fgcol = fgcol
         self.bgcol = bgcol
+
+class Animation:
+    def __init__(self, speed=1, charList=[], looping=False):
+        self.charList = charList
+        self.index = 0
+        self.speed = speed
+        self.looping = looping
         
 class Human: # controlled by human player
     def __init__(self):
         pass
 
 class AI:
-    def __init__(self, ai=None):
-        self.ai = ai
+    def __init__(self, func=None):
+        self.func = func
 
 class Actor: 
     def __init__(self, ap=0):
@@ -130,7 +145,8 @@ class Modularity:
         self.modules = {}
         self.num_slots = 3
         self.upgrade_kits = 0
-    
+    def get_module(self, index):
+        return self.modules.get(index, None)
 
 
 
@@ -174,16 +190,38 @@ class Weakness_Piercing:
         pass
 
 class StatusElec:
+    NAME = "electrified"
     def __init__(self, duration=1):
         self.duration = duration
 class StatusStun:
+    NAME = "stunned"
     def __init__(self, duration=1):
         self.duration = duration
 class StatusInked:
+    NAME = "inked"
+    def __init__(self, duration=1):
+        self.duration = duration
+class StatusFear:
+    NAME = "frightened"
+    def __init__(self, duration=1):
+        self.duration = duration
+class StatusWeak:
+    NAME = "weakened"
+    def __init__(self, duration=1):
+        self.duration = duration
+class StatusFrenzied:
+    NAME = "frenzied"
     def __init__(self, duration=1):
         self.duration = duration
 
-
+STATUSES={
+    "electrified" : StatusElec,
+    "stunned" : StatusStun,
+    "inked" : StatusInked,
+    "frightened" : StatusFear,
+    "weakened" : StatusWeak,
+    "frenzied" : StatusFrenzied,
+    }
 
 
 

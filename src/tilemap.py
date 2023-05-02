@@ -155,7 +155,8 @@ RENDERER:
         return bgCol
     
     # functions to get information about entities on the grid #
-    
+
+    def wallat(self,x,y):               return self.tileat(x,y) == TILE_WALL
     def nthings(self,x,y):              return len(self.grid_things[x][y])
     def thingsat(self,x,y):             return self.grid_things[x][y]
     def thingat(self,x,y): #return the thing at the top of the pile at tile
@@ -194,6 +195,8 @@ RENDERER:
         if self.monat(x,y):
             return False
         if self.solidat(x,y):
+            return False
+        if self.wallat(x,y):
             return False
         return True
 
@@ -447,7 +450,8 @@ Reason: entity has no position component.'''.format(ent))
                         if ent==pc:
                             visibility=10 #VISIBILITY_MAX
                         else:
-                            camo = rog.getms(ent, 'camo')
+                            camo = 0 # temporary -- get from Components
+                            
                             visibility=rog.visibility(
                                 pc,sight,plight,camo,dist)
 ##                            print('visibility: ',visibility)
@@ -455,6 +459,7 @@ Reason: entity has no position component.'''.format(ent))
                         
                         if visibility<=0: continue
                         # render data based on visibility
+##                        assert(world.has_component(ent, cmp.Image)
                         rend=world.component_for_entity(ent, cmp.Image)
                         char = rend.char if visibility > 1 else '?'
                         

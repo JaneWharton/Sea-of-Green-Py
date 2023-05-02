@@ -2,22 +2,9 @@
     orangIO
     (Orange I/O)
         An input/output extension for tcod Python
-    
-    Softly Into the Night, a sci-fi/Lovecraftian roguelike
-    Copyright (C) 2023 Jane Wharton.
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>
+    There is an error where non-numpad keys are not working on laptop
+    Numerical keys are not working on desktop PC
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -181,42 +168,42 @@ Shift+/
 NONE
 NONE
 
-// North
+// Up
 K
 KP8
 NONE
 
-// West
+// Left
 H
 KP4
 NONE
 
-// South
+// Down
 J
 KP2
 NONE
 
-// East
+// Right
 L
 KP6
 NONE
 
-// Northwest
+// Diagonal Up-left
 Y
 KP7
 NONE
 
-// Southwest
+// Diagonal Down-left
 B
 KP1
 NONE
 
-// Southeast
+// Diagonal Down-right
 N
 KP3
 NONE
 
-// Northeast
+// Diagonal Up-right
 U
 KP9
 NONE
@@ -226,14 +213,24 @@ NONE
 KP5
 NONE
 
-// up
+// Enter passageway
 Shift+,
 NONE
 NONE
 
-// down
-Shift+.
+// Use Module 1
+1
+z
 NONE
+
+// Use Module 2
+2
+x
+NONE
+
+// Use Module 3
+3
+c
 NONE
 
 // context-sensitive action
@@ -241,98 +238,13 @@ SPACE
 NONE
 NONE
 
-// chat | talk | speak
-c
-NONE
-NONE
-
-// target entity (+ target limbs) to fire / throw / attack
+// target entity to fire / throw / attack / examine
 t
 NONE
 NONE
 
-// move prompt
-m
-NONE
-NONE
-
-// attack prompt
-x
-NONE
-NONE
-
-// shoot ranged weapon
-f
-NONE
-NONE
-
-// throw missile
-shift+t
-NONE
-NONE
-
-// get item (pickup & place in inventory)
-g
-,
-NONE
-
-// grab item (pickup item & hold in hand)
-ctrl+,
-NONE
-NONE
-
-// grapple (grab foe's limbs, etc.)
-ctrl+g
-NONE
-NONE
-
-// open/Close
-o
-NONE
-NONE
-
-// close
-Shift+=
-NONE
-NONE
-
-// open
--
-NONE
-NONE
-
-// inventory
-i
-NONE
-NONE
-
-// abilities menu
-Tab
-NONE
-NONE
-
-// equipment menu
-e
-NONE
-NONE
-
-// change body position or stance (crouch, stand, lie prone, etc.)
-p
-NONE
-NONE
-
-// change movement speed (walking, running, sprinting, etc.)
-s
-NONE
-NONE
-
-// speed up movement speed
-Shift+s
-NONE
-NONE
-
-// slow down movement speed
-Ctrl+s
+// Character page -- show modules, status, progress, etc.
+a
 NONE
 NONE
 
@@ -346,21 +258,6 @@ w
 Ctrl+t
 NONE
 
-// rest
-r
-NONE
-NONE
-
-// move view
-v
-NONE
-NONE
-
-// fixed view mode
-Ctrl+v
-NONE
-NONE
-
 // show player location (find player)
 Ctrl+f
 NONE
@@ -369,11 +266,6 @@ NONE
 // show message history
 Shift+h
 NONE
-NONE
-
-// show character page
-a
-Shift+c
 NONE
 
 // quit game
@@ -476,45 +368,26 @@ NONE
 COMMANDS = {        # translate commands into actions
 
     'help'          : {'help': True}, # CHANGED ORDERING, TEST TO MAKE SURE IT STILL WORKS.
-    'north'         : {'context-dir': (0, -1,  0,) },
-    'west'          : {'context-dir': (-1, 0,  0,) },
-    'south'         : {'context-dir': (0,  1,  0,) },
-    'east'          : {'context-dir': (1,  0,  0,) },
-    'northwest'     : {'context-dir': (-1, -1, 0,) },
-    'southwest'     : {'context-dir': (-1, 1,  0,) },
-    'southeast'     : {'context-dir': (1,  1,  0,) },
-    'northeast'     : {'context-dir': (1, -1,  0,) },
+    'up'            : {'context-dir': (0, -1,  0,) },
+    'left'          : {'context-dir': (-1, 0,  0,) },
+    'down'          : {'context-dir': (0,  1,  0,) },
+    'right'         : {'context-dir': (1,  0,  0,) },
+    'up-left'       : {'context-dir': (-1, -1, 0,) },
+    'down-left'     : {'context-dir': (-1, 1,  0,) },
+    'down-right'    : {'context-dir': (1,  1,  0,) },
+    'up-right'      : {'context-dir': (1, -1,  0,) },
     'self'          : {'context-dir': (0,  0,  0,) },
-    'up'            : {'context-dir': (0,  0, -1,) },
-    'down'          : {'context-dir': (0,  0,  1,) },
+    'enter-passage' : {'context-dir': (0,  0,  1,) },
+    'use1'          : {'use1': True},
+    'use2'          : {'use2': True},
+    'use3'          : {'use3': True},
     'context'       : {'context': True},
-    'chat-context'  : {'chat-context': True},
     'target-prompt' : {'target-prompt': True},
-    'move-prompt'   : {'move-prompt': True},
-    'attack-prompt' : {'attack-prompt': True},
-    'shoot-prompt'  : {'shoot-prompt': True},
-    'throw-prompt'  : {'throw-prompt': True},
-    'get-prompt'    : {'get-prompt': True},
-    'grabitem-prompt':{'grabitem-prompt': True},
-    'grapple-prompt': {'grapple-prompt': True},
-    'openclose-prompt':{'openclose-prompt': True},
-    'close-prompt'  : {'close-prompt': True},
-    'open-prompt'   : {'open-prompt': True},
-    'inventory'     : {'inventory': True},
-    'abilities'     : {'abilities': True},
-    'equipment'     : {'equipment': True},
-    'change-pos'    : {'change-pos': True},
-    'change-msp'    : {'change-msp': True},
-    'msp-up'        : {'msp-up': True},
-    'msp-down'      : {'msp-down': True},
+    'character-page': {'character-page': True},
     'look'          : {'look': True},
     'wait'          : {'wait': True},
-    'rest'          : {'rest': True},
-    'move view'     : {'move view': True},
-    'fixed view'    : {'fixed view': True},
     'find player'   : {'find player': True},
     'msg history'   : {'message history': True},
-    'char page'     : {'character page': True},
     'quit'          : {'quit game': True},
 
     'menu-up'       : {'menu-nav': (0, -1,  0,) },

@@ -30,7 +30,7 @@ import rogue as rog
 import components as cmp
 import misc
 import maths
-##import entities
+import entities
 
 
 dirStr=" <hjklyubn.>"
@@ -43,369 +43,6 @@ class Menu:
     # PC-specific actions first #
 
 
-# pickup
-# grab an item from the game world, removing it from the grid
-def pickup_pc(pc):
-    world = rog.world()
-    pos = world.component_for_entity(pc, cmp.Position)
-    pcx = pos.x
-    pcy = pos.y
-    rog.alert("Pick up what?{d}".format(d=dirStr))
-    args=rog.get_direction()
-    if not args:
-        rog.alert()
-        return False
-    dx,dy,dz=args
-    xx,yy = pcx + dx, pcy + dy
-    
-    things=rog.thingsat(xx,yy)
-    if pc in things: #can't pick yourself up.
-        things.remove(pc)
-
-    choice=None
-    if len(things) > 1:
-        rog.alert("There are multiple things here. Pick up which item?")
-        choices = [] #["all",] #should player be able to pickup multiple things at once? Maybe could be a delayed action?
-        for thing in things:
-            choices.append(thing)
-        choice=rog.menu(
-            "pick up", rog.view_port_x()+2, rog.view_port_y()+2, choices
-            )
-    else:
-        if things:
-            choice=things[0]
-
-    if choice==-1:
-        return False
-    
-    if (choice and choice != "all"):
-        
-        #thing is creature! You can't pick up creatures :( or can you...?
-        if world.has_component(choice, cmp.Creature):
-            rog.alert("You can't pick that up!")
-            return False
-        #thing is on fire, prompt user & burn persistent rogues
-##        if rog.on(choice,FIRE):
-##            answer=""
-##            while True:
-##                answer=rog.prompt(0,0,rog.window_w(),1,maxw=1,
-##                    q="That thing is on fire! Are you sure? y/n",
-##                    mode='wait',border=None)
-##                answer=answer.lower()
-##                if answer == "y" or answer == " " or answer == K_ENTER:
-##                    rog.alert("You burn your hands!")
-##                    rog.burn(pc, FIRE_BURN)
-##                    rog.hurt(pc, FIRE_PAIN)
-##                    rog.damage(pc, FIRE_DAMAGE)
-##                    break
-##                elif answer == "n" or answer == K_ESCAPE:
-##                    return False
-        # put in inventory
-        pocketThing(pc, choice)
-        
-##    elif choice == "all": # TODO
-##        for tt in things:
-##            pocketThing(pc, tt)
-        
-    else:
-        rog.alert("There is nothing there to pick up.")
-        return False
-    return True
-# end def
-
-def equipment_pc(pc):
-    world=rog.world()
-    assert(world.has_component(pc, cmp.Body))
-    body = world.component_for_entity(pc, cmp.Body)
-    x=0
-    y=rog.view_port_y()
-    equipment = {} # {'torso' : {name : (slot,eq_const,),},}
-    
-    # get core slots from body plan
-    if body.plan==BODYPLAN_HUMANOID:
-        # get all equipment from body
-        equipment['torso'] = {
-            'front':(body.core.front.slot,EQ_FRONT,),
-            'back':(body.core.back.slot,EQ_BACK,),
-            'core':(body.core.core.slot,EQ_CORE,),
-            'hips':(body.core.hips.slot,EQ_HIPS,),
-            'about':(body.slot,EQ_ABOUT,),
-        }
-    else:
-        raise Exception #TODO: logic for other body types
-    
-    # get parts equipment
-    for cls, part in body.parts.items():
-        # what type of BP Container is this?
-        if type(part)==cmp.BPC_Arms:
-            equipment['arms'] = {}
-            for i in range(len(part.arms)):
-                arm=part.arms[i]
-                n="{} ".format(BPINDEX[i])
-                equipment['arms'].update( {
-                    '{}hand (w)'.format(n) : (arm.hand.held,i+EQ_MAINHANDW,),
-                    '{}hand'.format(n)     : (arm.hand.slot,i+EQ_MAINHAND,),
-                    '{}arm'.format(n)      : (arm.arm.slot, i+EQ_MAINARM,),
-                } )
-        elif type(part)==cmp.BPC_Legs:
-            equipment['legs'] = {}
-            for i in range(len(part.legs)):
-                leg=part.legs[i]
-                n="{} ".format(BPINDEX[i])
-                equipment['legs'].update( {
-                    '{}foot'.format(n) : (leg.foot.slot,i+EQ_MAINFOOT,),
-                    '{}leg'.format(n)  : (leg.leg.slot,i+EQ_MAINLEG,),
-                } )
-        elif type(part)==cmp.BPC_Heads:
-            equipment['heads'] = {}
-            for i in range(len(part.heads)):
-                head=part.heads[i]
-                n="{} ".format(rog.numberplace(i+1)) if i > 0 else ""
-                equipment['heads'].update( {
-                    '{}head'.format(n) : (head.head.slot,i+EQ_MAINHEAD,),
-                    '{}face'.format(n) : (head.face.slot,i+EQ_MAINFACE,),
-                    '{}neck'.format(n) : (head.neck.slot,i+EQ_MAINNECK,),
-                    '{}eyes'.format(n) : (head.eyes.slot,i+EQ_MAINEYES,),
-                    '{}ears'.format(n) : (head.ears.slot,i+EQ_MAINEARS,),
-                } )
-    # end for
-    
-    # init menu
-    _TABS="... "
-    data_i = 0
-    data={} # for getting info about equipment slot for equipping/removing
-    varia={}
-    for k,v in equipment.items():
-        varia["open_{}".format(k)] = False
-    
-##    rog.Rogue.pause_menu_key_listener()
-    # run menu
-    while True:
-        menu={"return" : "return"}
-        for k,v in equipment.items():
-            if not v: continue
-            if varia["open_{}".format(k)]:
-                menu["- {}".format(k)] = "close_{}".format(k)
-                for kk,vv in v.items():
-                    slot,eq_const = vv
-                    if slot.item:
-                        itemname = rog.fullname(slot.item)
-                    elif slot.covered:
-                        itemname = "X"
-                    else:
-                        itemname = "-"
-                    nkey = "{}{}: {}".format(_TABS,kk,itemname)
-                    nval = "item_{}" if slot.item else "equip_{}"
-                    nval = nval.format(data_i)
-                    menu[nkey] = nval
-                    data[data_i] = (slot, eq_const,)
-                    data_i += 1
-            else:
-                menu["+ {}".format(k)] = "open_{}".format(k)
-                
-        opt=rog.menu("{}'s equipment".format(
-            rog.gettitlename(pc)), x,y, menu.keys())
-        
-        if opt == -1: break
-        selected=menu[opt]
-        if "return" == selected: break
-        # open / close submenus
-        elif "open_" == selected[:5]:
-            target = selected[5:]
-            varia["open_{}".format(target)] = True
-        elif "close_" == selected[:6]:
-            target = selected[6:]
-            varia["open_{}".format(target)] = False
-        # equip item
-        elif "equip_" == selected[:6]:
-            data_id = int(selected[6:])
-            slot, eq_const = data[data_id]
-            item = _inventory_pc(pc)
-            if slot.covered:
-                alert("That slot is covered up by another piece of equipment!")
-                break
-            if item!=-1:
-                equip_pc(pc, item, eq_const)
-        # view item
-        elif "item_" == selected[:5]:
-            data_id = int(selected[5:])
-            slot, eq_const = data[data_id]
-            item = slot.item
-            itemn = rog.fullname(item)
-            menu_viewItem={
-                "r" : "remove",
-                "x" : "examine",
-                }
-            if world.has_component(item, cmp.Throwable):
-                menu_viewItem['t'] = 'throw'
-            if world.has_component(item, cmp.Usable):
-                menu_viewItem['u'] = 'use'
-            opt2=rog.menu(
-                "{}".format(itemn.name), x,y,
-                menu_viewItem, autoItemize=False
-            )
-            if opt2 == -1: break
-            if opt2 == "use":
-                use_pc(pc, item)
-            elif opt2 == "remove":
-                deequip_pc(pc, item)
-            elif opt2 == "examine":
-                examine_pc(pc, item)
-            elif opt2 == "throw":
-                target_pc_throw_item(pc, item)
-    # end while
-##    rog.Rogue.resume_menu_key_listener()
-# end def
-
-
-# abilities menu
-def abilities_pc(pc):
-    pass
-
-# end def
-def _process_selected_item_option(pc, selected, item, rmgcost=False):
-    rmg=False
-    if selected=='return':
-        return
-    elif selected == "remove":
-        rmg=True
-        deequip_pc(pc, item)
-    elif selected == "drop":
-        rmg=True
-        drop_pc(pc, item)
-    elif selected == "wear":
-        rmg=True
-        eq_type=rog.get_wear_type(pc, item)
-        equip_pc(pc, item, eq_type)
-    elif selected == "wield":
-        rmg=True
-        eq_type=rog.get_wield_type(pc, item) # TODO: make this func
-        equip_pc(pc, item, eq_type)
-    elif selected == "throw":
-        rmg=True
-        target_pc_throw_item(pc, item)
-    elif selected == "eat":
-        rmg=True
-        eat_pc(pc, item)
-    elif selected == "quaff":
-        rmg=True
-        quaff_pc(pc, item)
-    elif selected == "use":
-        rmg=True
-        use_pc(pc, item)
-    elif selected == "examine":
-        rmg=True
-        examine_pc(pc, item)
-    # 
-    if (rmgcost and rmg):
-        rog.spendAP(pc, NRG_RUMMAGE)
-# end def
-
-# inventory menu
-def inventory_pc(pc):
-    ''' inventory menu with standard item viewing menu '''
-    return inventory_pc_func(pc, _menu_item)
-# end def
-def inventory_pc_func(pc, func):
-    ''' inventory menu with custom function for handling item '''
-    item = _inventory_pc(pc)
-    if item:
-        return func(pc, item)
-# end def
-def _inventory_pc(pc):
-    ''' inventory menu -> select an item from inventory '''
-    world=rog.world()
-    assert(world.has_component(pc, cmp.Inventory))
-    pcInv = world.component_for_entity(pc, cmp.Inventory)
-    x=rog.view_port_x()
-    y=rog.view_port_y()
-    selected=None
-    item=None
-    #   items menu
-    item=rog.menu("{}'s inventory".format(
-        rog.gettitlename(pc)), x,y, pcInv.data)
-    return item
-# end def
-def _menu_item(pc, item):
-    ''' viewing an item, menu for item interaction '''
-    world = rog.world()
-    selected=None
-    if item != -1:
-        itemn = rog.fullname(item)
-        pos = world.component_for_entity(pc, cmp.Position)
-        menu = _getMenuItems_item(item)
-        opt=rog.menu(
-            "{}".format(itemn.name), 1+rog.getx(pos.x),1+rog.gety(pos.y),
-            menu, autoItemize=False
-        )
-        #print(opt)
-        if opt == -1: return
-        _process_selected_item_option(pc, opt, item, rmgcost=True)
-    return (selected, item,)
-# end def
-
-def _getMenuItems_item(item) -> dict:
-    ''' get a menu dict for an item -- using, throwing, dropping, etc. '''
-    world = rog.world()
-    keysItems={}
-    #   get available actions for this item...
-    
-    if world.has_component(item, cmp.Equipped):
-        keysItems.update({"r":"remove"})
-    elif world.has_component(item, cmp.Held):
-        keysItems.update({"r":"remove"})
-        
-    if world.has_component(item, cmp.Edible):
-        keysItems.update({"e":"eat"})
-    if world.has_component(item, cmp.Quaffable):
-        keysItems.update({"q":"quaff"})
-    if world.has_component(item, cmp.EquipableInHoldSlot):
-        keysItems.update({"w":"wield"})
-        # throwables - subset of equipables
-        if world.has_component(item, cmp.Throwable):
-            keysItems.update({"t":"throw"})
-    if rog.has_wearable_component(item):
-        keysItems.update({"W":"wear"})
-    if world.has_component(item, cmp.Usable):
-        keysItems.update({"u":"use"})
-    if world.has_component(item, cmp.Openable):
-        keysItems.update({"o":"open"})
-    
-    # generic
-    keysItems.update({"x":"examine"})
-    keysItems.update({"d":"drop"})
-    #
-    return keysItems
-# end def
-
-def drop_pc(pc,item):
-    itemname=rog.fullname(item)
-    rog.alert("Place {i} where?{d}".format(d=dirStr,i=itemname))
-    args=rog.get_direction()
-    if not args: return
-    dx,dy,dz=args
-    
-    if not drop(pc, item, dx, dy):
-        rog.alert("You can't put that there!")
-    rog.update_game()
-    rog.update_hud()
-
-def open_pc(pc): # open or close
-    # pick what to open/close
-    rog.alert("Open/close what?{d}".format(d=dirStr))
-    args=rog.get_direction()
-    if not args: return
-    dx,dy,dz=args
-    pos = rog.world().component_for_entity(pc, cmp.Position)
-    xto = pos.x + dx
-    yto = pos.y + dy
-    # do the open/close action
-    success = openClose(pc, xto, yto)
-    if not success:
-        return
-    rog.update_game()
-    rog.update_hud()
-##    rog.update_fov(pc) # updated by tile change func
 
 def target_pc_generic(pc):
     ''' generic target function; target entity, then choose what to do '''
@@ -450,17 +87,6 @@ def target_pc(pc, func, *args, **kwargs):
     pos = rog.world().component_for_entity(pc, cmp.Position)
     rog.aim_find_target(pos.x, pos.y, func, *args, **kwargs)
 # end def
-
-def target_pc_throw_item(pc, item):
-    ''' throw throwable item item at user-selected tile '''
-    if rog.is_wielding_mainhand(pc):
-        if rog.dominant_arm(pc).hand.held.item != item:
-            rog.prompt(
-                0,0,rog.window_w(),4,
-                q="You are already wielding a different weapon in your dominant limb.",
-                mode='wait'
-                )
-    target_pc(pc, throw_item_at, item=item)
 
 def shoot_pc(pc, xdest, ydest) -> bool:
     marm=rog.dominant_arm(pc)
@@ -518,36 +144,6 @@ def examine_self_pc(pc):
     ans=rog.menu(item=rog.menu("Examine what?".format(
         pcn.title,pcn.name), x,y, choices))
 
-def equip_pc(pc, item, equipType):
-    print("equipType: ", equipType)
-    func, str1, str2 = _get_eq_data(equipType)
-
-    # TODO: convert this to a queued action / get queued actions working!!
-    
-    result = func(pc, item) # try to equip
-    
-    # messages / alerts
-    if result == 1:
-        rog.update_hud()
-        rog.update_final()
-        rog.game_update()
-    else:
-        prep = "in" if str1=="wield" else "on" # preposition
-        if result == -100:
-            rog.alert("You can't {} that {} the {}.".format(str1,prep,str2))
-        elif result == -101:
-            rog.alert("You can't {} that {} the {}.".format(str1,prep,str2))
-        elif result == -102:
-            rog.alert("You are already {w}ing something in that {bp} slot.".format(w=str1, bp=str2))
-# end def
-
-def deequip_pc(pc, item):
-    # TODO: AP action costs
-    rog.remove_equipment(pc, item)
-    rog.update_hud()
-    rog.update_final()
-    rog.game_update()
-
 def examine_pc(pc, item):
     if rog.world().has_component(item, cmp.Description):
         descript=rog.world().component_for_entity(item, cmp.Description).description
@@ -556,7 +152,47 @@ def examine_pc(pc, item):
         rog.alert(0,0,40,30, "<MISSING DESCRIPTION>")
 
 
+# modules
 
+def screw_dash(pc, tile):
+    pos = Rogue.world.component_for_entity(pc, cmp.Position)
+    xt,yt = (pos.x, pos.y,)
+    xf,yf = tile
+    move(pc, xf, yf)
+    
+    # use up energy (TODO)
+    # make sound (TODO)
+    
+    print("dash to tile [{}, {}] from tile [{}, {}]".format(xt,yt,xf,yf))
+def use_screw_pc(pc):
+    rog.ability_dash(x,y,screw_dash)
+
+def use_torpedo_pc(pc):
+    # DEBUG: why does bubble move two spaces in first turn
+    # figure out why HUD not displaying after firing torpedo
+    
+    world = rog.world()
+    direction = rog.get_direction("Fire torpedo left or right?")
+    if (direction!=(1,0,0) and direction!=(-1,0,0)):
+        return
+
+    pos = world.component_for_entity(pc, cmp.Position)
+    x1 = pos.x+direction[0]
+    x2 = pos.x-direction[0]
+    y = pos.y
+    # create bubbles
+    if not rog.wallat(x2,y):
+        rog.create_bubbles(x2,y)
+    # fire the torpedo
+    modular = world.component_for_entity(pc, cmp.Modularity)
+    for module in modular.modules.values():
+        if type(module)==entities.Gear_Torpedo:
+            damage = module.get_damage()
+            dmgType = module.get_damage_type()
+    rog.create_torpedo(x1,y,direction[0],damage,dmgType)
+    rog.spendAP(pc, 1)
+
+    
 
 #######################################################################
                     # Non-PC-specific actions #
@@ -634,7 +270,7 @@ def drop(ent, item, dx, dy):
 # end def
 
 
-def move(ent,dx,dy, pace=-1, mx=1):  # actor locomotion
+def move(ent,dx,dy):  # actor locomotion
     '''
         move: generic actor locomotion
         Returns True if move was successful, else False
@@ -642,9 +278,6 @@ def move(ent,dx,dy, pace=-1, mx=1):  # actor locomotion
             ent : entity that's moving
             dx  : change in x position
             dy  : change in y position
-            pace: rate of movement (PACE_ const)
-                    -1: use the current pace the actor is moving at
-            mx  : AP/Calorie/Stamina cost multiplier value
     '''
     # init
     world = rog.world()

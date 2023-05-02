@@ -73,7 +73,7 @@ def play(pc, pcAct):
 ##    rog.pc_listen_sounds()
 ##    rog.clear_listeners()
 
-    rog.run_refresh_managers()
+    rog.run_refresh_manager()
     rog.game_update()
     #timer.print() #DEBUG TESTING. SHOWS TIME ELAPSED SINCE RESET.
     

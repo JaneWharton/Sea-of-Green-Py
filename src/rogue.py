@@ -28,6 +28,7 @@
 import esper
 import tcod as libtcod
 import math
+import time
 
 from const import *
 from colors import COLORS as COL
@@ -172,11 +173,18 @@ class Rogue:
     #   Functions    #
     #----------------#
 
+
     # Rogue
 def const_ent(ent): return Rogue.c_entities[ent]
 def _ent_stone_wall(): return const_ent(ENT_STONE_WALL)
-def run_refresh_managers(): # run every time ANY input is received
+def run_refresh_manager(): # run every time ANY input is received
     Rogue.c_managers['refresh'].run()
+def disable_refresh_manager():
+    print("turn off")
+    Rogue.c_managers['refresh'].disable()
+def enable_refresh_manager():
+    print("turn on again")
+    Rogue.c_managers['refresh'].enable()
 
 # global warning flags
 def allow_warning_msp():
@@ -232,6 +240,8 @@ def turn_pass():        Rogue.clock.turn_pass()
 def get_turn():         return Rogue.clock.turn
 
 # map
+def tilefree(x,y):
+    return Rogue.map.tilefree(x,y)
 def getmap(z=None): # get TileMap obj for the corresponding dungeon level
     if z is None:
         z = dlvl()
@@ -599,11 +609,18 @@ def port(ent,x,y):
         compo = Rogue.world.component_for_entity(ent, cmp.LightSource)
         compo.light.reposition(x, y)
 
+def setAP(ent, val):
+    actor=Rogue.world.component_for_entity(ent, cmp.Actor)
+    actor.ap = val
+def spendAP(ent, amt):
+    actor=Rogue.world.component_for_entity(ent, cmp.Actor)
+    actor.ap = max(0, actor.ap - amt)
+    
 def pocket(ent, item):
     world=Rogue.world
     grid_remove(item)
     give(ent, item)
-    spendAP(ent, NRG_POCKET)
+    spendAP(ent, 1)
     if world.has_component(item, cmp.Position):
         world.remove_component(item, cmp.Position)
     
@@ -646,7 +663,7 @@ def visibility(ent, sight, plight, camo, dist) -> int: # calculate visibility le
             (function logic has been altered)
     '''
     _sx = 4 if on(ent, NVISION) else 1
-    return int( math.log2(plight)*0.5 + ( 40+sight - (dice.roll(20)+camo+dist) )//20)
+    return int( math.log2(plight)*0.5 + ( 40+sight - (misc.dice_roll(20)+camo+dist) )//20)
 # end def
 
     
@@ -671,53 +688,23 @@ def damage(ent, dmg: int):
 def kill(ent): #remove a thing from the world
     if on(ent, DEAD): return
     world = Rogue.world
-    _type = world.component_for_entity(ent, cmp.Draw).char
+    _type = world.component_for_entity(ent, cmp.Image).char
     if world.has_component(ent, cmp.DeathFunction): # call destroy function
         world.component_for_entity(ent, cmp.DeathFunction).func(ent)
     make(ent, DEAD)
     clear_status_all(ent)
     
-    # handle any dependencies shared by this entity before removing it #
-    
-    # unequip entity if it's currently being worn / held as an equip
-    if world.has_component(ent, cmp.Equipped):
-        compo = world.component_for_entity(ent, cmp.Equipped)
-        deequip(compo.owner, compo.equipType)
-        
-    # drop entity's equipped items if applicable
-    if world.has_component(ent, cmp.Body):
-        deequip_all(ent)
-    
-    # remove entity from inventory if it's being carried
-    if world.has_component(ent, cmp.Carried):
-        compo = world.component_for_entity(ent, cmp.Carried)
-        drop(compo.owner, ent)
-        
-    # drop entity's inventory if it's carrying anything
-    if world.has_component(ent, cmp.Inventory):
-        for tt in world.component_for_entity(ent, cmp.Inventory).data:
-            drop(ent, tt)
-    
     # remains #
-    
-    # creatures
     isCreature = world.has_component(ent, cmp.Creature)
     if isCreature:
         # create a corpse
-        if dice.roll(100) < entities.corpse_recurrence_percent[_type]:
+        if misc.dice_roll(100) < entities.corpse_recurrence_percent[_type]:
             create_corpse(ent)
     # inanimate things
     else:
-        # burn to ashes
-        if get_status(ent, cmp.StatusBurn):
-            mat = world.component_for_entity(ent, cmp.Form).material
-            if (mat==MAT_FLESH
-                or mat==MAT_WOOD
-                or mat==MAT_FUNGUS
-                or mat==MAT_VEGGIE
-                or mat==MAT_LEATHER
-                ):
-                create_ashes(ent)
+        # create bubbles
+        # TODO
+        pass
     # end if
     
     # cleanup #
@@ -725,11 +712,54 @@ def kill(ent): #remove a thing from the world
 # end def
 
 
+
     #----------------------#
     #        Events        #
     #----------------------#
 
-#... (messages, sending messages to player based on what happens in game)
+# MESSAGES: TODOOOOO
+
+def event_sight(x,y,text):
+    if not text: return
+    Rogue.c_managers['events'].add_sight(x,y,text)
+def event_sound(x,y,data):
+    if (not data): return
+    volume,text1,text2=data
+    Rogue.c_managers['events'].add_sound(x,y,text1,text2,volume)
+# TODO: differentiate between 'events' and 'sights' / 'sounds' which are for PC entity only (right???)
+def listen_sights(ent):     return  Rogue.c_managers['events'].get_sights(ent)
+def add_listener_sights(ent):       Rogue.c_managers['events'].add_listener_sights(ent)
+def remove_listener_sights(ent):    Rogue.c_managers['events'].remove_listener_sights(ent)
+def clear_listen_events_sights(ent):Rogue.c_managers['events'].clear_sights(ent)
+def listen_sounds(ent):     return  Rogue.c_managers['events'].get_sounds(ent)
+def add_listener_sounds(ent):       Rogue.c_managers['events'].add_listener_sounds(ent)
+def remove_listener_sounds(ent):    Rogue.c_managers['events'].remove_listener_sounds(ent)
+def clear_listen_events_sounds(ent):Rogue.c_managers['events'].clear_sounds(ent)
+def clear_listeners():              Rogue.c_managers['events'].clear()
+    
+##def listen_sights(ent):     return  Rogue.c_managers['sights'].get_sights(ent)
+##def add_listener_sights(ent):       Rogue.c_managers['sights'].add_listener_sights(ent)
+##def remove_listener_sights(ent):    Rogue.c_managers['sights'].remove_listener_sights(ent)
+##def clear_listen_events_sights(ent):Rogue.c_managers['sights'].clear_sights(ent)
+##def listen_sounds(ent):     return  Rogue.c_managers['sounds'].get_sounds(ent)
+##def add_listener_sounds(ent):       Rogue.c_managers['sounds'].add_listener_sounds(ent)
+##def remove_listener_sounds(ent):    Rogue.c_managers['sounds'].remove_listener_sounds(ent)
+##def clear_listen_events_sounds(ent):Rogue.c_managers['sounds'].clear_sounds(ent)
+
+def pc_listen_sights(): # these listener things for PC might need some serious work...
+    pc=Rogue.pc
+    lis=listen_sights(pc)
+    if lis:
+        for ev in lis:
+            Rogue.c_managers['sights'].add(ev)
+        manager_sights_run()
+def pc_listen_sounds():
+    pc=Rogue.pc
+    lis=listen_sounds(pc)
+    if lis:
+        for ev in lis:
+            Rogue.c_managers['sounds'].add(ev)
+        manager_sounds_run()
 
 
 
@@ -804,11 +834,8 @@ def update_all_fovmaps():
     #     Things     #
     #----------------#
 
-def register_entity(ent): # NOTE!! this no longer adds to grid.
-    # initialize stats components
-    create_moddedStats(ent) # is there a place this would belong better?
-    make(ent,DIRTY_STATS)
 def release_entity(ent):
+    print("released ", Rogue.world.component_for_entity(ent, cmp.Name).name)
     # do a bunch of precautionary stuff / remove entity from registers ...
     remove_listener_sights(ent) 
     remove_listener_sounds(ent)
@@ -859,364 +886,77 @@ def create_corpse(ent):
     return corpse
 
 
-    #-----------------#
-    #    Equipment    #
-    #-----------------#
+### build equipment and place in the world
+##def _initThing(ent):
+##    register_entity(ent)
+##    grid_insert(ent)
+##    givehp(ent) #give random quality based on dlvl?
 
-def list_equipment(ent):
-    lis = []
-    body = Rogue.world.component_for_entity(ent, cmp.Body)
-    # core
-    if body.plan==BODYPLAN_HUMANOID:
-        lis.append(body.slot.item)
-        lis.append(body.core.front.slot.item)
-        lis.append(body.core.back.slot.item)
-        lis.append(body.core.hips.slot.item)
-        lis.append(body.core.core.slot.item)
-    else:
-        raise Exception # TODO: differentiate with different body types
-    # parts
-    for cls, part in body.parts.items():
-        if type(part)==cmp.BPC_Arms:
-            for arm in part.arms:
-                lis.append(arm.hand.held.item)
-                lis.append(arm.hand.slot.item)
-                lis.append(arm.arm.slot.item)
-        elif type(part)==cmp.BPC_Legs:
-            for leg in part.legs:
-                lis.append(leg.foot.slot.item)
-                lis.append(leg.leg.slot.item)
-        elif type(part)==cmp.BPC_Heads:
-            for head in part.heads:
-                lis.append(head.mouth.held.item)
-                lis.append(head.head.slot.item)
-                lis.append(head.face.slot.item)
-                lis.append(head.neck.slot.item)
-                lis.append(head.eyes.slot.item)
-                lis.append(head.ears.slot.item)
-    while None in lis:
-        lis.remove(None)
-    return lis
-
-def equip(ent,item,equipType): # equip an item in 'equipType' slot
-    '''
-        equip ent with item in the slot designated by equipType const
-        (functions for held or worn items)
-        return tuple: (result, compo,)
-            where result is a negative value for failure, or 1 for success
-            and compo is None or the item's equipable component if success
-        
-##                #TODO: add special effects; light, etc. How to??
-            light: make the light a Child of the equipper
-    '''
-##    print("trying to equip {} to {}".format(fullname(item), fullname(ent)))
-# init and failure checking #
-    # first check that the entity can equip the item in the indicated slot.
-    world = Rogue.world
-    equipableConst = EQUIPABLE_CONSTS[equipType]
-    eqcompo = _get_eq_compo(ent, equipType)
-    holdtype=(equipType in cmp.EQ_BPS_HOLD) # holding type or armor type?
-
-    if equipType==EQ_NONE:
-        return (-100,None,) # NULL value for equip type
-    if not world.has_component(item, equipableConst):
-        return (-1,None,) # item can't be equipped in this slot
-    if not eqcompo: # component selected. Does this component exist?
-        return (-2,None,) # something weird happened
-    if eqcompo.slot.covered:
-        return (-3,None,) # already have something covering that slot
-    if ( equipType==EQ_OFFHANDW and on(item, TWOHANDS)):
-        return (-5,None,) # reject 2-h weapons not equipped in mainhand.
-    equipable = world.component_for_entity(item, equipableConst)
-    
-    # ensure body type indicates presence of this body part
-    # (TODO)
-##    if EQTYPES_TO_BODYPARTS[equipType] in BODYPLAN_BPS[body.plan]:
-##        ...
-
-    # coverage #
-    
-    # figure out what additional slots the equipment covers, if any
-    def __cov(ent, clis, flis, eqtype, cls): # cover additional body part
-        for _com in findbps(ent, cls): # temporary
-            if _com.slot.covered: # make sure you can't equip something if ...
-                flis.append(_com) # ... any required slots are occupied.
-            else:
-                clis.append(_com)
-    # end def
-    clis = [] # success list - covered
-    flis = [] # failure list
-    
-    # two hands
-    # TODO : change logic so that you CAN wield 2-h weapon in 1-h
-    # it's just that you get a big penalty for doing so.
-##    if ( equipType==EQ_MAINHAND and on(item, TWOHANDS) ):
-##        __cov(ent,clis,hlis,flis,equipType,cmp.BP_Hand) # Fixme: this covers ALL hands. 
-    if equipType==EQ_FRONT:
-        if equipable.coversBack: __cov(ent,clis,flis,equipType,cmp.BP_TorsoBack)
-        if equipable.coversCore: __cov(ent,clis,flis,equipType,cmp.BP_TorsoCore)
-        if equipable.coversHips: __cov(ent,clis,flis,equipType,cmp.BP_Hips)
-    if equipType==EQ_MAINHEAD:
-        if equipable.coversFace: __cov(ent,clis,flis,equipType,cmp.BP_Face)
-        if equipable.coversNeck: __cov(ent,clis,flis,equipType,cmp.BP_Neck)
-        if equipable.coversEyes: __cov(ent,clis,flis,equipType,cmp.BP_Eyes)
-        if equipable.coversEars: __cov(ent,clis,flis,equipType,cmp.BP_Ears)
-    if flis:
-        return (-10, flis,) # failed to equip because the BPs in flis are already covered.
-# /init #
-    
-        #-------------------------#
-        # success! Equip the item #
-        #-------------------------#
-        
-##    print("successfully equipped {} to {}".format(fullname(item), fullname(ent)))
-
-    # remove item from the map and from agent's inventory if applicable
-    grid_remove(item)
-    if item in getinv(ent):
-        take(ent, item)
-##        print("taken {} from {}".format(fullname(item), fullname(ent)))
-    # indicate that the item is equipped using components
-    world.add_component(item, cmp.Child(ent))
-    if holdtype:
-        world.add_component(item, cmp.Held(ent, equipType))
-    else:
-        world.add_component(item, cmp.Equipped(ent, equipType))
-    if world.has_component(item, cmp.Fitted):
-        fitted=world.component_for_entity(item, cmp.Fitted)
-        if fitted.entity==ent:
-            armorfit = FIT_ARMOR_MAX
-            heldfit = FIT_HELD_MAX
-        else:
-            armorfit = 0
-            diff = abs(fitted.height - getbase(ent,'height'))//2
-            heldfit = 0.5*FIT_HELD_MAX - diff*(FIT_HELD_MAX/FIT_ARMOR_MAX)
-    else:
-        armorfit = 0
-        heldfit = 0
-    
-    # put it in the right slot (held or worn?)
-    if holdtype: # held
-        eqcompo.held.item = item
-        eqcompo.held.fit = heldfit
-# todo: function that adds these values to get how well you're gripping something.
-    else: # worn
-        eqcompo.slot.item = item
-        eqcompo.slot.fit = armorfit
-    
-    eqcompo.slot.covered = True # cover this BP
-    
-    if ( (equipType==EQ_MAINLEG or equipType==EQ_OFFLEG)
-         and equipable.coversBoth
-        ):
-        # for now just cover all legs (TEMPORARY OBV.)
-        for leg in findbps(ent, cmp.BP_Leg):
-            clis.append(leg)
-    
-    # cover
-    eqcompo.slot.covers = tuple(clis)
-    # cover the BPs
-    for _com in clis:
-        _com.slot.covered=True
-    #
-    
-    make(ent, DIRTY_STATS)
-    return (1,equipable,) # yey success
-    
-# end def
-
-def remove_equipment(ent, item):
-    ''' dewield or deequip (context sensitive) '''
-    world = Rogue.world
-    if world.has_component(item, cmp.Equipped):
-        equipType=world.component_for_entity(item,cmp.Equipped).equipType
-        deequip(ent, equipType)
-    elif world.has_component(item, cmp.Held):
-        equipType=world.component_for_entity(item,cmp.Held).equipType
-        dewield(ent, equipType)
-        
-def deequip_all(ent): # TODO: test this (and thus all deequip funcs)
-    body = Rogue.world.component_for_entity(ent, cmp.Body)
-    
-    # core
-    if body.plan==BODYPLAN_HUMANOID:
-        _deequipSlot(ent, body.slot)
-        deequip(ent, EQ_FRONT)
-        deequip(ent, EQ_BACK)
-        deequip(ent, EQ_HIPS)
-        deequip(ent, EQ_CORE)
-    else:
-        raise Exception # TODO: differentiate with different body types
-    # parts
-    for cls, part in body.parts.items():
-        if type(part)==cmp.BPC_Arms:
-            for arm in part.arms:
-                _dewield(ent, arm.hand)
-                _deequip(ent, arm.hand)
-                _deequip(ent, arm.arm)
-        elif type(part)==cmp.BPC_Legs:
-            for leg in part.legs:
-                _deequip(ent, leg.foot)
-                _deequip(ent, leg.leg)
-        elif type(part)==cmp.BPC_Heads:
-            for head in part.heads:
-                _dewield(ent, head.mouth)
-                _deequip(ent, head.head)
-                _deequip(ent, head.face)
-                _deequip(ent, head.neck)
-                _deequip(ent, head.eyes)
-                _deequip(ent, head.ears)
-    # end for
-# end def
-def deequip(ent,equipType):
-    ''' remove worn equipment from slot 'equipType' (not held)
-        return the item that was equipped there
-            or None if failed to un-equip
-    '''
-    compo = _get_eq_compo(ent, equipType)
-    if not compo:
-        return None
-    return _deequip(ent, compo)
-# end def
-def _deequip(ent, compo):
-    ''' unequip the worn item in the component's wear slot (not held)
-        consider coverage of other slots that may be affected
-    '''
-    # uncover the covered slot(s)
-    for cc in compo.slot.covers:
-        cc.slot.covered = False
-    compo.slot.covers = ()
-    
-    return _deequipSlot(ent, compo.slot)
-# end def
-def _deequipSlot(ent, slot):
-    ''' unequip the worn item from equip slot slot (not held)
-        unconcerned with coverage of other slots
-    '''
-    world=Rogue.world
-    item = slot.item
-    if not item: #nothing equipped here
-        return None
-    
-    world.remove_component(item, cmp.Child)
-    world.remove_component(item, cmp.Equipped)
-    slot.item = None
-    slot.covered = False
-    slot.fit = 0
-    give(ent, item) # put item in inventory
-    
-    make(ent, DIRTY_STATS)
-    return item
-# end def
-
-def dewield(ent,equipType): # for held items only (not worn)
-    compo = _get_eq_compo(ent, equipType)
-    if not compo:
-        return None
-    return _dewield(ent, compo)
-# end def
-def _dewield(ent, compo):
-    world=Rogue.world
-    item = compo.held.item
-    if not item: #nothing equipped here
-        return None
-    
-    world.remove_component(item, cmp.Child)
-    world.remove_component(item, cmp.Held)
-    compo.held.covered = False
-    compo.held.item = None
-    compo.held.fit = 0
-    give(ent, item) # put item in inventory
-    
-    make(ent, DIRTY_STATS)
-    return item
-# end def
-
-# build equipment and place in the world
-def _initThing(ent):
-    register_entity(ent)
+def create_bubbles(x,y):
+    ent=entities.create_bubbles(x,y)
     grid_insert(ent)
-    givehp(ent) #give random quality based on dlvl?
-def create_weapon(name,x,y,cond=1,mat=None):
-    ent=entities.create_weapon(name,x,y,condition=cond,mat=mat)
-    _initThing(ent)
     return ent
 
+def create_torpedo(x,y,direction,damage,dmgType):
+    # TODO: update to allow multi-direction firing
+
+    disable_refresh_manager()
+    
+    if direction==1:
+        img = 10
+    else:
+        img = 12
+    pos = cmp.Position(x,y)
+    torpedo = Rogue.world.create_entity(
+        pos,
+        cmp.Name("torpedo"),
+        cmp.Image(img, COL['accent'], COL['black']),
+        cmp.Flags()
+        )
+    grid_insert(torpedo)
+    while True:
+        # torpedo move animation
+        if not tilefree(pos.x,pos.y): #explode
+            mon = monat(pos.x,pos.y)
+            if mon:
+                hurt(mon, damage, dmgType)
+            # explosion animation
+            animation_explosion(pos.x,pos.y)
+            # create bubbles at site of explosion
+            if not wallat(pos.x,pos.y):
+                create_bubbles(pos.x,pos.y)
+            release_entity(torpedo)
+            break
+        port(torpedo, pos.x + direction, pos.y)
+##        time.sleep(0.05)
+        update_game()
+        update_base()
+        update_final()
+        game_update()
+    update_game()
+    update_base()
+    update_final()
+    enable_refresh_manager()
+
+
+def animation_explosion(x,y):
+    ent = Rogue.world.create_entity(
+        cmp.Name("explosion"),
+        cmp.Position(x,y),
+        cmp.Image(ANIM_BOOM[1][0], COL['accent'], COL['black']),
+        cmp.Animation(ANIM_BOOM[0], ANIM_BOOM[1]),
+        cmp.Flags()
+        )
+    grid_insert(ent)
+    animation = Rogue.world.component_for_entity(ent, cmp.Animation)
+    while animation.index < len(ANIM_BOOM[1]) - 1:
+        entities.animate(ent)
+        time.sleep(1/animation.speed)
+        update_game()
+        update_base()
+        update_final()
+        game_update()
            
-
-
-def _update_stats(ent): # PRIVATE, ONLY TO BE CALLED FROM getms(...)
-    ''' calculate modified stats (ModdedStats component)
-            building up from scratch (base stats from Stats component)
-            add any modifiers from equipment, status effects, etc.
-        return the ModdedStats component
-        after this is called, you can access the ModdedStats component
-            and it will contain the right value, until something significant
-            updates which would change the calculation, at which point the
-            DIRTY_STATS flag for that entity must be set to True.
-        NOTE: this and ModdedStats component are private.
-            Use the public interface "getms" to access modified stats.
-    '''
-    # NOTE: apply all penalties (w/ limits, if applicable) AFTER bonuses.
-        # this is to ensure you don't end up with MORE during a
-        #   penalty application; as in the case the value was negative
-    
-# init #----------------------------------------------------------------#
-    
-    world=Rogue.world
-    base=world.component_for_entity(ent, cmp.Stats)
-    modded=world.component_for_entity(ent, cmp.ModdedStats)
-
-    # RESET all modded stats to their base
-    for k,v in base.__dict__.items():
-        modded.__dict__[k] = v
-
-
-    
-    
-#~~~#---------------------------------------------------------------#~~~#
-    #       FINAL        MULTIPLIERS       BEGIN       HERE         #
-#~~~#---------------------------------------------------------------#~~~#
-    
-    #------------------------------------------------#
-    #   Statuses that affect (non-attribute) stats   #
-    #------------------------------------------------#
-    
-    
-#~~~~~~~#--------------#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-        #   finalize   #
-        #--------------#
-    
-    # final multipliers
-    # apply mods -- mult mods
-    
-    # round values
-
-    # cap values at their limits
-
-##    print(" ** ~~~~ ran _update_stats.")
-
-    # NOTE: resulting values can be negative, but this can be
-    #   checked for, depending on the individual uses for each stat
-    #   e.g. MSp cannot be below 1-5 or so for purposes of movement,
-    #   Spd cannot be below 1, Dmg cannot be below 0,
-    
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-    assert(not on(ent, DIRTY_STATS)) # MUST NOT BE DIRTY OR ELSE A MAJOR PROBLEM EXISTS IN THE CODE. Before this is called, dirty_stats flag is removed. If it got reset during this function then we get infinite recursion of this expensive function.
-    return modded
-# end def
-
-
-# create and initialize the ModdedStats component
-def create_moddedStats(ent):
-    world=Rogue.world
-    modded=cmp.ModdedStats()
-    base=world.component_for_entity(ent, cmp.Stats)
-    for k in base.__dict__.keys():
-        modded.__dict__.update({ k : 0 })
-    world.add_component(ent, modded)
-    make(ent, DIRTY_STATS)
-    return modded
 
 
 
@@ -1397,27 +1137,6 @@ def _get_pronouns(gender): return GENDERS[gender][1]
     # managers #
     #----------#
 
-# manager listeners
-class Manager_Listener: # listens for a result from a game state Manager.
-    def alert(self, result): # after we get a result, purpose is finished.
-        manager_listeners_remove(self) # delete the reference to self.
-class Aim_Manager_Listener(Manager_Listener):
-    def __init__(self, world, caller, shootfunc, *args, **kwargs):
-        self.world=world
-        self.caller=caller      # entity who is calling the shootfunc
-        self.shootfunc=shootfunc # function that runs when you select viable target
-        self.arglist=args     # arguments for the shootfunc function
-        self.kwarglist=kwargs # keyword arguments "
-    def alert(self, result):
-        if type(result) is int: # we have an entity target
-##            print(self.arglist)
-##            print(self.kwarglist)
-            self.shootfunc(
-                self.caller, result,
-                *self.arglist, **self.kwarglist
-                )
-        super(Aim_Manager_Listener, self).alert(result)
-
 def manager_listeners_alert(result):
     for listener in manager_listeners():
         listener.alert(result)
@@ -1480,6 +1199,27 @@ def aim_find_target(xs, ys, selectfunc, *args, **kwargs):
     listener = Aim_Manager_Listener(
         world(), Rogue.pc, selectfunc, *args, **kwargs)
     manager_listeners_add(listener)
+    
+def ability_dash(xs, ys, selectfunc, maxMove, *args, **kwargs):
+    # selectfunc: the function that is ran when you select a valid target
+    clear_active_manager()
+    game_set_state("manager") #move view
+    
+
+    valid_tiles = [] # populate valid tiles list (todo)
+    for i in range(-maxMove, maxMove + 1):
+        if i==0:
+            continue
+        if tilefree(xs +i, ys):
+            valid_tiles.append((xs + i, ys,))
+
+    Rogue.manager=managers.Manager_SelectTile(
+        xs, ys, Rogue.view, Rogue.map.get_map_state())
+    Rogue.view.fixed_mode_disable()
+    # listener -- handles the shooting
+    listener = SelectTile_Manager_Listener(
+        world(), Rogue.pc, selectfunc, valid_tiles=valid_tiles)
+    manager_listeners_add(listener)
 
 # Manager_PrintScroll
 def help():
@@ -1535,7 +1275,8 @@ def routine_print_charPage():
 # player chooses a direction using key bindings or the mouse,
 # returns a tuple or None
 #
-def get_direction():
+def get_direction(msg=""):
+    alert(msg)
     while True:
         pcAct=IO.handle_mousekeys(IO.get_raw_input()).items()
         for act,arg in pcAct:

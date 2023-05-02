@@ -45,6 +45,8 @@ class ActorsProcessor(esper.Processor):
         # NPC / AI / computer turn
         for ent,(actor, _ai) in world.get_components(
             cmp.Actor, cmp.AI ):
+            print("ai func: ", _ai.func)
+            print("ent: ", world.component_for_entity(ent, cmp.Name).name)
             while actor.ap > 0:
                 _ai.func(ent)
 # end class

@@ -141,18 +141,6 @@ def commands(pc, pcAct):
         
         elif act == 'help':
             rog.help()
-
-        # "move-prompt" : True
-        # prompt for a direction
-        #   and then perform the move action in that direction
-        elif act == 'move-prompt':
-            pass
-
-        # "attack-prompt" : True
-        # prompt for a direction
-        #   and then perform the attack action in that direction
-        elif act == 'attack-prompt':
-            pass
         
         # "move" : (x_change, y_change, z_change,)
         elif act == 'move':
@@ -211,21 +199,18 @@ def commands(pc, pcAct):
         
         # "attack" : (x, y, z,)
         elif act == 'use1':
-            pass
+            modular = world.component_for_entity(pc, cmp.Modularity)
+            use_module(pc, modular.get_module(1))
+        elif act == 'use2':
+            modular = world.component_for_entity(pc, cmp.Modularity)
+            use_module(pc, modular.get_module(2))
+        elif act == 'use3':
+            modular = world.component_for_entity(pc, cmp.Modularity)
+            use_module(pc, modular.get_module(3))
         # end conditional
 
-        # chat with closest speaking entity;
-        #   if multiple good options, prompt for which one.
-        elif act == "chat-context":
-            action.chat_context(pc)
-            _Update()
-            return
         elif act == "target-prompt": #target entity + fire / throw / attack
             action.target_pc_generic(pc)
-            _Update()
-            return
-        elif act == "get-prompt":
-            action.pickup_pc(pc)
             _Update()
             return
         #
@@ -248,12 +233,6 @@ def commands(pc, pcAct):
             pos = world.component_for_entity(pc, cmp.Position)
             rog.routine_look(pos.x,pos.y)
             return
-        elif act == "move view":
-            rog.routine_move_view()
-            return
-        elif act == "fixed view":
-            rog.fixedViewMode_toggle()
-            return  
         elif act == 'select':
             # TESTING
             print(rog.Input(0,0,20))
@@ -264,6 +243,37 @@ def commands(pc, pcAct):
     # end for
 # end def
 
+
+def use_module(pc, module=None):
+    if not module:
+        return False
+
+    if type(module)==entities.Gear_Screw:
+        action.use_screw_pc(pc)
+    elif type(module)==entities.Gear_BallastTank:
+        action.use_ballasttank_pc(pc)
+    elif type(module)==entities.Gear_PumpJet:
+        action.use_pumpjet_pc(pc)
+    elif type(module)==entities.Gear_ControlSurfaces:
+        action.use_controlsurfaces_pc(pc)
+    elif type(module)==entities.Gear_SonarPulse:
+        action.use_sonarpulse_pc(pc)
+    elif type(module)==entities.Gear_InkJet:
+        action.use_inkjet_pc(pc)
+    elif type(module)==entities.Gear_Torpedo:
+        action.use_torpedo_pc(pc)
+    elif type(module)==entities.Gear_SuperTorpedo:
+        action.use_supertorpedo_pc(pc)
+    elif type(module)==entities.Gear_Mine:
+        action.use_mine_pc(pc)
+    elif type(module)==entities.Gear_DepthCharge:
+        action.use_depthcharge_pc(pc)
+    elif type(module)==entities.Gear_Harpoon:
+        action.use_harpoon_pc(pc)
+    elif type(module)==entities.Gear_Electrifier:
+        action.use_electrifier_pc(pc)
+    
+    return True
 
 
 def _selectFromBigMenu():
@@ -394,6 +404,8 @@ def chargen(sx, sy):
     rog.add_module(player_ent, 1, entities.Gear_Torpedo())
     rog.add_module(player_ent, 2, entities.Gear_Screw())
     rog.add_module(player_ent, 3, entities.Gear_BallastTank())
+
+    rog.grid_insert(player_ent)
     
     return player_ent
 

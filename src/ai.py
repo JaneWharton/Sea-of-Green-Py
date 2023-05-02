@@ -29,6 +29,37 @@ import misc
 
 
 
+def ai_curious(bot):
+    pass
+def ai_fearful(bot):
+    pass
+def ai_electrify(bot):
+    pass
+def ai_puff(bot):
+    pass
+def ai_docile(bot):
+    pass
+def ai_support(bot):
+    pass
+def ai_hunter(bot):
+    pass
+def ai_swarm(bot):
+    pass
+    # try to stick close to others of same species
+    # if one is injured, all go into a frenzy and start killing everything
+    # that isn't a member of their own species
+
+def ai_rise(bot):
+    rog.spendAP(bot, 1)
+    pos = rog.world().component_for_entity(bot, cmp.Position)
+    if rog.wallat(pos.x,pos.y - 1):
+        rog.kill(bot)
+    rog.nudge(bot, 0, -1)
+def ai_fall(bot):
+    rog.nudge(bot, 0, 1)
+    rog.spendAP(bot, 1)
+
+
 ##def tick(ent): # handled by a processor now
 ##    world = rog.world()
 ##    if not world.has_component(ent, cmp.AI): return

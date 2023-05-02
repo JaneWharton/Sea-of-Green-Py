@@ -67,7 +67,11 @@ class GameStateManager(Manager):
     def set_resume_state(self,new): self._resume_game_state=new
     def resume_game_state(self): rog.game_set_state(self._resume_game_state)
 #
-
+    
+# manager listeners
+class Manager_Listener: # listens for a result from a game state Manager.
+    def alert(self, result): # after we get a result, purpose is finished.
+        manager_listeners_remove(self) # delete the reference to self.
 
 
 
@@ -182,11 +186,17 @@ class Event_Sound():
 class Manager_Refresh(Manager):
     def __init__(self):
         super(Manager_Refresh,self).__init__()
+        self.enable()
+
+    def enable(self):
+        self.enabled = True
+    def disable(self):
+        self.enabled = False
 
     def run(self):
-        super(Manager_Refresh,self).run()
-    
-        rog.increment_wave_functions()
+        if self.enabled:
+            super(Manager_Refresh,self).run()
+            rog.increment_wave_functions()
         
 
 
@@ -452,13 +462,14 @@ class Manager_MoveView(GameStateManager):
 
 class Manager_SelectTile(GameStateManager):
     
-    def __init__(self, xs,ys, view, con):
+    def __init__(self, xs,ys, view, con, valid_tiles=[]):
         super(Manager_SelectTile, self).__init__()
 
-        self.cursor     = IO.Cursor(0,0,rate=0.3)
+        self.cursor         = IO.Cursor(0,0,rate=0.3)
+        self.view           = view
+        self.con            = con
+        self.valid_tiles    = valid_tiles # how should we handle this?
         self.set_pos(rog.getx(xs), rog.gety(ys))
-        self.view       = view
-        self.con        = con
     
     def run(self, pcAct):
         super(Manager_SelectTile, self).run(pcAct)
@@ -547,7 +558,16 @@ class Manager_SelectTile(GameStateManager):
         rog.refresh()
 #
 
-
+class SelectTile_Manager_Listener(Manager_Listener):
+    def __init__(self, world, caller, selectfunc, valid_tiles=[]):
+        self.world=world
+        self.caller=caller
+        self.selectfunc=selectfunc
+        self.valid_tiles=valid_tiles
+    def alert(self, result):
+        if result in self.valid_tiles:
+            self.selectfunc(self.caller, result)
+        super(SelectTile_Manager_Listener, self).alert(result)
 
 
 #
@@ -1015,7 +1035,23 @@ class Manager_AimFindTarget(GameStateManager):
         self.targeted_index += 1
         self.target_at_index(self.targeted_index)
 #
-    
+
+class Aim_Manager_Listener(Manager_Listener):
+    def __init__(self, world, caller, shootfunc, *args, **kwargs):
+        self.world=world
+        self.caller=caller      # entity who is calling the shootfunc
+        self.shootfunc=shootfunc # function that runs when you select viable target
+        self.arglist=args     # arguments for the shootfunc function
+        self.kwarglist=kwargs # keyword arguments "
+    def alert(self, result):
+        if type(result) is int: # we have an entity target
+##            print(self.arglist)
+##            print(self.kwarglist)
+            self.shootfunc(
+                self.caller, result,
+                *self.arglist, **self.kwarglist
+                )
+        super(Aim_Manager_Listener, self).alert(result)
 #
 # aim find target entity
 # target entity using a dumb line traversing algorithm
