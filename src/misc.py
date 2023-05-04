@@ -1078,7 +1078,7 @@ def render_hud(w,h,pc,turn,dlvl):
     stats=strngStats.split('|')
     statLines=[[]]
     totx=0
-    y=0
+    y=1
     for stat in stats:
         lenStat=len(stat) + 1
         col=_HUD_get_color(stat)
@@ -1093,7 +1093,7 @@ def render_hud(w,h,pc,turn,dlvl):
         statLines[-1].append(new)
     #
     
-    # Draw output #
+    # Draw stat line output #
     for line in statLines:
         for stat in line:
             if stat.y > h-1: continue
@@ -1102,6 +1102,25 @@ def render_hud(w,h,pc,turn,dlvl):
             # place any special characters
             if ord(stat.text[0]) >= 129:
                 con.put_char(stat.x,stat.y, ord(stat.text[0]))
+    #
+
+    modular = world.component_for_entity(pc, cmp.Modularity)
+    # Draw modules line output #
+    xx = 12
+    yy = 0
+    libtcod.console_set_default_foreground(con, COL['white'])
+    for data in modular.modules.items():
+        index,module = data
+        libtcod.console_print(con, xx, yy, str(index))
+        if module.active:
+            con.put_char(xx+1, yy, 248)
+        con.put_char(xx+2, yy, module.CHAR)
+        if module.USES:
+            libtcod.console_print(con, xx+4,yy, "{}/{}".format(
+                module.quantity, module.get_uses()))
+        xx += 16
+##        con.put_char(xx+4, 1, 150)
+##        libtcod.console_print(con, xx+6,yy, "{}".format(module.get_energy()))
     #
     
     return con

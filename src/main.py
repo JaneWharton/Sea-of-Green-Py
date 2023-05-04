@@ -20,6 +20,7 @@ def main():
     rog.Rogue.create_controller()
     rog.Rogue.create_data()
     rog.Rogue.create_map(ROOMW,ROOMH)
+    rog.Rogue.create_view()
 ##    rog.Rogue.create_fov_maps()
     rog.Rogue.create_clock()
     rog.Rogue.create_updater()

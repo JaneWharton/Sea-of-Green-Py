@@ -343,6 +343,43 @@ class Box():
         self.visible = True
 
 
+class View:
+    def __init__(self,w,h,roomw,roomh):
+        self.x=0; self.y=0; self.w=w;self.h=h; self.roomw=roomw;self.roomh=roomh
+        self.followSpd=10
+        self._fixed_mode=False
+    def fixed_mode_toggle(self):    self._fixed_mode=not self._fixed_mode
+    def fixed_mode_disable(self):   self._fixed_mode=False
+    def fixed_mode_enable(self):    self._fixed_mode=True
+        
+    def nudge(self,dx,dy):
+        if self._fixed_mode: return
+        self.x += dx; self.y += dy;
+        #self.limit_pos()
+    
+    def follow(self,obj):
+        if self._fixed_mode: return
+        if obj.x > self.x + self.w*2/3 -1:      self.nudge(self.followSpd,0)
+        elif obj.x <= self.x + self.w*1/3 -1:   self.nudge(-self.followSpd,0)
+        if obj.y - self.y >= self.h*1/2 +5:
+            self.nudge(0,int(self.followSpd/2))
+        elif obj.y - self.y < self.h*1/2 -5:
+            self.nudge(0,int(-self.followSpd/2))
+        
+    def limit_pos(self):
+        self.x = min(self.x, self.roomw - self.w)
+        self.y = min(self.y, self.roomh - self.h)
+        self.x = max(self.x, 0)
+        self.y = max(self.y, 0)
+
+    def center(self,x,y):
+        if self._fixed_mode: return
+        self.x = x - int(self.w/2)
+        self.y = y - int(self.h/2)
+        #self.limit_pos()
+
+
+
 class Clock:
     '''
         game time and turn tracker

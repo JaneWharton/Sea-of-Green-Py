@@ -125,20 +125,32 @@ class Status:
             add a status if entity doesn't already have that status
             **MUST NOT set the DIRTY_STATS flag.
         '''
-        if rog.world().has_component(ent, component): return False
+        world = rog.world()
+        if world.has_component(ent, component): return False
         status_str = ""
         
         # message, attribute modifiers, aux. effects (based on status type)
         if component is cmp.StatusElec:
-            status_str = " becomes electrified"
+            status_str = " is electrified"
+        if component is cmp.StatusStun:
+            status_str = " is stunned"
+        if component is cmp.StatusInked:
+            status_str = " is inked"
+        if component is cmp.StatusFear:
+            status_str = " is afraid"
+        if component is cmp.StatusWeak:
+            status_str = " is weakened"
+        if component is cmp.StatusFrenzied:
+            status_str = " enters a frenzy"
         
         # TODO: events to display the messages
-        name = rog.world().component_for_entity(ent, cmp.Name)
-        if status_str:
-            string = "{}{}{}".format(TITLES[name.title], name.name, status_str)
+        # display only messages for Creature entities.
+        name = world.component_for_entity(ent, cmp.Name)
+        if (world.has_component(ent, cmp.Creature) and status_str):
+            string = "{}{}".format(name.name, status_str)
             rog.msg(string) # TEMPORARY
         
-        rog.world().add_component(ent, component(t=t))
+        world.add_component(ent, component(t=t))
         return True
     # end def
         
@@ -171,13 +183,41 @@ class Status:
 class StatusProcessor(esper.Processor):
     def process(self):
         world = self.world
-
-            
-        # paralyzed
+        
         for ent, status in world.get_component(
             cmp.StatusElec ):
             status.timer -= 1
             if status.timer == 0:
                 Status.remove(ent, cmp.StatusElec)
+                continue
+        for ent, status in world.get_component(
+            cmp.StatusStun ):
+            status.timer -= 1
+            if status.timer == 0:
+                Status.remove(ent, cmp.StatusStun)
+                continue
+        for ent, status in world.get_component(
+            cmp.StatusInked ):
+            status.timer -= 1
+            if status.timer == 0:
+                Status.remove(ent, cmp.StatusInked)
+                continue
+        for ent, status in world.get_component(
+            cmp.StatusFear ):
+            status.timer -= 1
+            if status.timer == 0:
+                Status.remove(ent, cmp.StatusFear)
+                continue
+        for ent, status in world.get_component(
+            cmp.StatusWeak ):
+            status.timer -= 1
+            if status.timer == 0:
+                Status.remove(ent, cmp.StatusWeak)
+                continue
+        for ent, status in world.get_component(
+            cmp.StatusFrenzied ):
+            status.timer -= 1
+            if status.timer == 0:
+                Status.remove(ent, cmp.StatusFrenzied)
                 continue
 # end class

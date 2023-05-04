@@ -35,6 +35,7 @@ from colors import COLORS as COL
 import components as cmp
 import processors as proc
 import orangio  as IO
+import ai
 import entities
 import game
 import lights
@@ -239,6 +240,26 @@ def level_set(lv):
 def turn_pass():        Rogue.clock.turn_pass()
 def get_turn():         return Rogue.clock.turn
 
+
+# view
+def view_nudge(dx,dy):      Rogue.view.nudge(dx,dy)
+def view_nudge_towards(ent):Rogue.view.follow(ent)
+def view_center(ent):
+    pos=Rogue.world.component_for_entity(ent, cmp.Position)
+    Rogue.view.center(pos.x, pos.y)
+def view_center_player():
+    pos=Rogue.world.component_for_entity(Rogue.pc, cmp.Position)
+    Rogue.view.center(pos.x, pos.y)
+def view_center_coords(x,y):Rogue.view.center(x,y)
+def view_x():       return  Rogue.view.x
+def view_y():       return  Rogue.view.y
+def view_w():       return  Rogue.view.w
+def view_h():       return  Rogue.view.h
+def view_max_x():   return  ROOMW - Rogue.view.w #constraints on view panning
+def view_max_y():   return  ROOMH - Rogue.view.h
+def fixedViewMode_toggle(): Rogue.view.fixed_mode_toggle()
+
+
 # map
 def tilefree(x,y):
     return Rogue.map.tilefree(x,y)
@@ -256,7 +277,7 @@ def tile_change(x,y,char):
     updateNeeded=Rogue.map.tile_change(x,y,char)
     if updateNeeded:
         update_all_fovmaps()
-def map_reset_lighting():   Rogue.map.grid_lighting_init()
+def map_reset_lighting():   Rogue.map.lightmap_init()
 def tile_lighten(x,y,value):Rogue.map.tile_lighten(x,y,value)
 def tile_darken(x,y,value): Rogue.map.tile_darken(x,y,value)
 def get_actual_light_value(x,y):
@@ -275,7 +296,7 @@ def increment_wave_functions():
 
 # updater
 def update_base():      Rogue.update.base()
-#def update_pcfov():     Rogue.update.pcfov()
+##def update_pcfov():     Rogue.update.pcfov()
 def update_game():      Rogue.update.game()
 def update_msg():       Rogue.update.msg()
 def update_hud():       Rogue.update.hud()
@@ -441,6 +462,17 @@ def asserte(ent, condition, errorstring=""): # "ASSERT Entity"
 
     # "Fun"ctions #
 
+def get_power(submarine):
+    return Rogue.world.component_for_entity(submarine, cmp.Battery).energy
+def set_power(submarine, amount):
+    batt = Rogue.world.component_for_entity(submarine, cmp.Battery)
+    batt.energy = min(batt.energy + amount, batt.energy_max)
+def drain_power(submarine, amount):
+    batt = Rogue.world.component_for_entity(submarine, cmp.Battery)
+    batt.energy = max(batt.energy - amount, 0)
+    if batt.energy == 0:
+        kill(submarine) #temp
+
 def ceil(f): return math.ceil(f)
 def line(x1,y1,x2,y2):
     for tupl in misc.Bresenham2D(x1,y1,x2,y2):
@@ -468,6 +500,18 @@ def numberplace(i): # convert integer to numbering position / numbering place / 
         if imod10==3: return "{}rd".format(i) # e.g. 3rd
     return "{}th".format(i) # e.g. 212th
 
+
+def hurt(ent, dmg, dmgType):
+    if Rogue.world.has_component(ent, cmp.Hull):
+        component = cmp.Hull
+    elif Rogue.world.has_component(ent, cmp.HP):
+        component = cmp.HP
+    else:
+        return
+    compo = Rogue.world.component_for_entity(ent, component)
+    compo.hp -= dmg
+    if compo.hp <= 0:
+        kill(ent)
 
 # component getters | parent / child functions
 def getpos(ent):
@@ -506,6 +550,14 @@ def cost_move(xf,yf,xt,yt,data):
 def is_in_grid_x(x):    return (x>=0 and x<ROOMW)
 def is_in_grid_y(y):    return (y>=0 and y<ROOMH)
 def is_in_grid(x,y):    return (x>=0 and x<ROOMW and y>=0 and y<ROOMH)
+
+
+# view
+def getx(x):        return x + view_port_x() - view_x()
+def gety(y):        return y + view_port_y() - view_y()
+def mapx(x):        return x - view_port_x() + view_x()
+def mapy(y):        return y - view_port_y() + view_y()
+
 
 
     #------------------#
@@ -608,6 +660,28 @@ def port(ent,x,y):
     if Rogue.world.has_component(ent, cmp.LightSource):
         compo = Rogue.world.component_for_entity(ent, cmp.LightSource)
         compo.light.reposition(x, y)
+    # explosion from stepping on mine
+    stuffhere = thingsat(x,y)
+    if len(stuffhere) >= 2:
+        for thing in stuffhere:
+            if Rogue.world.has_component(thing, cmp.Mine):
+                mine = Rogue.world.component_for_entity(thing, cmp.Mine)
+                explode(x,y,1,mine.damage)
+                kill(thing)
+                break
+
+def explode(x,y, r, dmg):
+    # TODO: get all tiles in radius from center
+    # right now, radius r not accounted for.
+    
+    mon = monat(x,y)
+    if mon:
+        hurt(mon, dmg, DMG_PHYSICAL)
+    # explosion animation
+    animation_explosion(x,y)
+    # create bubbles at site of explosion
+    if not wallat(x,y):
+        create_bubbles(x,y)
 
 def setAP(ent, val):
     actor=Rogue.world.component_for_entity(ent, cmp.Actor)
@@ -663,7 +737,7 @@ def visibility(ent, sight, plight, camo, dist) -> int: # calculate visibility le
             (function logic has been altered)
     '''
     _sx = 4 if on(ent, NVISION) else 1
-    return int( math.log2(plight)*0.5 + ( 40+sight - (misc.dice_roll(20)+camo+dist) )//20)
+    return int( math.log2(plight)*0.5 + ( 60+sight - (misc.dice_roll(20)+camo+dist) )//20)
 # end def
 
     
@@ -771,6 +845,8 @@ def pc_listen_sounds():
 def getfovmap(mapID): return Rogue.map.fov_map# Rogue.fov_maps[mapID] #
 def update_fov(ent):
     Rogue.c_managers['fov'].update(ent)
+def update_all_fovs():
+    Rogue.c_managers['fov'].update_all()
 def run_fov_manager(ent):
     Rogue.c_managers['fov'].run(ent)
     
@@ -894,7 +970,27 @@ def create_corpse(ent):
 
 def create_bubbles(x,y):
     ent=entities.create_bubbles(x,y)
+    set_status(ent, cmp.StatusStun, 2)
     grid_insert(ent)
+    update_hud()
+    return ent
+
+def create_mine(x,y,damage):
+    ent = Rogue.world.create_entity(
+        cmp.Name("mine"),
+        cmp.Image(168, COL['accent'], COL['black']),
+        cmp.Actor(),
+        cmp.AI(ai.ai_mine),
+        cmp.Position(x,y),
+        cmp.Mine(damage),
+        cmp.Flags()
+        )
+    grid_insert(ent)
+    set_status(ent, cmp.StatusStun, 2)
+    update_game()
+    update_base()
+    update_final()
+    update_hud()
     return ent
 
 def create_torpedo(x,y,direction,damage,dmgType):
@@ -915,35 +1011,57 @@ def create_torpedo(x,y,direction,damage,dmgType):
         )
     grid_insert(torpedo)
     while True:
+        update_game()
+        update_base()
+        update_final()
+        update_hud()
+        game_update()
         # torpedo move animation
         if not tilefree(pos.x,pos.y): #explode
-            mon = monat(pos.x,pos.y)
-            if mon:
-                hurt(mon, damage, dmgType)
-            # explosion animation
-            animation_explosion(pos.x,pos.y)
-            # create bubbles at site of explosion
-            if not wallat(pos.x,pos.y):
-                create_bubbles(pos.x,pos.y)
+            explode(pos.x,pos.y, 1, damage)
             release_entity(torpedo)
             break
         port(torpedo, pos.x + direction, pos.y)
 ##        time.sleep(0.05)
-        update_game()
-        update_base()
-        update_final()
-        game_update()
     update_game()
     update_base()
     update_final()
+    update_hud()
     enable_refresh_manager()
 
+    
+
+    # old dash func:
+##    pos=world().component_for_entity(Rogue.pc, cmp.Position)
+##    # selectfunc: the function that is ran when you select a valid target
+##    clear_active_manager()
+##    game_set_state("manager") #move view
+##    
+##
+##    valid_tiles = [] # populate valid tiles list (todo)
+##    for i in range(-maxMove, maxMove + 1):
+##        if i==0:
+##            continue
+##        if tilefree(pos.x +i, pos.y):
+##            valid_tiles.append((pos.x + i, pos.y,))
+##
+##    Rogue.manager=managers.Manager_SelectTile(
+##        pos.x, pos.y, Rogue.view, Rogue.map.get_map_state())
+##    Rogue.view.fixed_mode_disable()
+##    def selectfunc(pc, tile):
+##        port(pc, tile[0], tile[1])
+##        update_game()
+##        update_hud()
+##        spendAP(pc, 1)
+##    listener = managers.SelectTile_Manager_Listener(
+##        world(), Rogue.pc, selectfunc, valid_tiles=valid_tiles)
+##    manager_listeners_add(listener)
 
 def animation_explosion(x,y):
     ent = Rogue.world.create_entity(
         cmp.Name("explosion"),
         cmp.Position(x,y),
-        cmp.Image(ANIM_BOOM[1][0], COL['accent'], COL['black']),
+        cmp.Image(ANIM_BOOM[1][0], COL['red'], COL['black'], priority=True),
         cmp.Animation(ANIM_BOOM[0], ANIM_BOOM[1]),
         cmp.Flags()
         )
@@ -953,9 +1071,15 @@ def animation_explosion(x,y):
         entities.animate(ent)
         time.sleep(1/animation.speed)
         update_game()
-        update_base()
         update_final()
+        update_hud()
         game_update()
+    update_game()
+    update_base()
+    update_final()
+    update_hud()
+    # do NOT update game in final update
+    # we want to update AFTER doing everything else in this turn
            
 
 
@@ -1200,26 +1324,6 @@ def aim_find_target(xs, ys, selectfunc, *args, **kwargs):
         world(), Rogue.pc, selectfunc, *args, **kwargs)
     manager_listeners_add(listener)
     
-def ability_dash(xs, ys, selectfunc, maxMove, *args, **kwargs):
-    # selectfunc: the function that is ran when you select a valid target
-    clear_active_manager()
-    game_set_state("manager") #move view
-    
-
-    valid_tiles = [] # populate valid tiles list (todo)
-    for i in range(-maxMove, maxMove + 1):
-        if i==0:
-            continue
-        if tilefree(xs +i, ys):
-            valid_tiles.append((xs + i, ys,))
-
-    Rogue.manager=managers.Manager_SelectTile(
-        xs, ys, Rogue.view, Rogue.map.get_map_state())
-    Rogue.view.fixed_mode_disable()
-    # listener -- handles the shooting
-    listener = SelectTile_Manager_Listener(
-        world(), Rogue.pc, selectfunc, valid_tiles=valid_tiles)
-    manager_listeners_add(listener)
 
 # Manager_PrintScroll
 def help():
@@ -1280,7 +1384,7 @@ def get_direction(msg=""):
     while True:
         pcAct=IO.handle_mousekeys(IO.get_raw_input()).items()
         for act,arg in pcAct:
-            if (act=="context-dir" or act=="move"):
+            if (act=="context-dir" or act=="move" or act=="menu-nav"):
                 return arg
             if act=="exit":
                 alert("")

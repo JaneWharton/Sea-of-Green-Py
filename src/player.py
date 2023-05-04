@@ -167,29 +167,42 @@ def commands(pc, pcAct):
                     continue
                 permitted_directions = module.MOVE_DIRECTIONS
                 if ((dx,dy) in permitted_directions):
-                    energy_cost = module.get_energy()
-                    volume = module.get_volume()
+                    if (type(module)==entities.Gear_Screw and module.active):
+                        energy_cost = SCREW_OD_ENERGY*module.get_energy()
+                        volume = SCREW_OD_VOLUME*module.get_volume()
+                        movement = 2
+                    else:
+                        energy_cost = module.get_energy()
+                        volume = module.get_volume()
+                        movement = 1
                     can_move = True
                     break
 
             if not can_move:
                 return
             
-            xto=pos.x + dx
-            yto=pos.y + dy
+            moved = False
 
-            # out of bounds
-            if ( not rog.is_in_grid_x(xto) or not rog.is_in_grid_y(yto) ):
-                return
-            
-            if not rog.solidat(xto,yto):
-                # space is free, so we can move
-                action.move(pc, dx,dy)
+            for _ in range(movement):
+                xto=pos.x + dx
+                yto=pos.y + dy
 
-                     #TODO
+                # out of bounds
+                if ( not rog.is_in_grid_x(xto) or not rog.is_in_grid_y(yto) ):
+                    return
+                
+                if not rog.solidat(xto,yto):
+                    # space is free, so we can move
+                    action.move(pc, dx,dy)
+
+                    moved = True
+
+            if moved:
                 # expend energy
                 print("energy: ", energy_cost)
+                rog.drain_power(pc, energy_cost)
                 # make sound
+                     #TODO
                 print("volume: ", volume)
 
                 
@@ -249,29 +262,29 @@ def use_module(pc, module=None):
         return False
 
     if type(module)==entities.Gear_Screw:
-        action.use_screw_pc(pc)
+        action.use_screw_pc(pc, module)
     elif type(module)==entities.Gear_BallastTank:
-        action.use_ballasttank_pc(pc)
+        action.use_ballasttank_pc(pc, module)
     elif type(module)==entities.Gear_PumpJet:
-        action.use_pumpjet_pc(pc)
+        action.use_pumpjet_pc(pc, module)
     elif type(module)==entities.Gear_ControlSurfaces:
-        action.use_controlsurfaces_pc(pc)
+        action.use_controlsurfaces_pc(pc, module)
     elif type(module)==entities.Gear_SonarPulse:
-        action.use_sonarpulse_pc(pc)
+        action.use_sonarpulse_pc(pc, module)
     elif type(module)==entities.Gear_InkJet:
-        action.use_inkjet_pc(pc)
+        action.use_inkjet_pc(pc, module)
     elif type(module)==entities.Gear_Torpedo:
-        action.use_torpedo_pc(pc)
+        action.use_torpedo_pc(pc, module)
     elif type(module)==entities.Gear_SuperTorpedo:
-        action.use_supertorpedo_pc(pc)
+        action.use_supertorpedo_pc(pc, module)
     elif type(module)==entities.Gear_Mine:
-        action.use_mine_pc(pc)
+        action.use_mine_pc(pc, module)
     elif type(module)==entities.Gear_DepthCharge:
-        action.use_depthcharge_pc(pc)
+        action.use_depthcharge_pc(pc, module)
     elif type(module)==entities.Gear_Harpoon:
-        action.use_harpoon_pc(pc)
+        action.use_harpoon_pc(pc, module)
     elif type(module)==entities.Gear_Electrifier:
-        action.use_electrifier_pc(pc)
+        action.use_electrifier_pc(pc, module)
     
     return True
 
@@ -396,12 +409,12 @@ def chargen(sx, sy):
         cmp.Battery(0),
         cmp.Engine(0),
         cmp.Hull(0),
-        cmp.SenseSight(),
+        cmp.SenseSight(6),
         cmp.SenseHearing(),
         cmp.Flags(),
         cmp.Modularity()
         )
-    rog.add_module(player_ent, 1, entities.Gear_Torpedo())
+    rog.add_module(player_ent, 1, entities.Gear_Mine())
     rog.add_module(player_ent, 2, entities.Gear_Screw())
     rog.add_module(player_ent, 3, entities.Gear_BallastTank())
 

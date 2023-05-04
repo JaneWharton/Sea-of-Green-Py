@@ -16,10 +16,11 @@ class Position:
         self.y=y
 
 class Image:
-    def __init__(self, char=0,fgcol=(0,0,0,),bgcol=(0,0,0,)):
+    def __init__(self, char=0,fgcol=(0,0,0,),bgcol=(0,0,0,), priority=False):
         self.char = char
         self.fgcol = fgcol
         self.bgcol = bgcol
+        self.priority = priority
 
 class Animation:
     def __init__(self, speed=1, charList=[], looping=False):
@@ -47,6 +48,9 @@ class Value:
     # cost of goods,
     # amount of gold obtained when you kill enemy,
     # amount of gold player currently has on them
+    def __init__(self, value=1):
+        self.value=value
+class Reward: # item gives you gold when you step on it
     def __init__(self, value=1):
         self.value=value
 class Mass:
@@ -85,6 +89,10 @@ class Mobility:
 class Creature:
     def __init__(self):
         pass
+
+class Mine:
+    def __init__(self, damage):
+        self.damage=damage
     
 class LightSource:
     def __init__(self, lightID, light):
@@ -93,14 +101,14 @@ class LightSource:
 
         
 class SenseSight:
-    def __init__(self):
+    def __init__(self, sense=30):
         self.fovID = -1
-        self.sense = 200
+        self.sense = sense
 ##        self.events = []
 class SenseHearing: # unimplemented... should we use this?
-    def __init__(self):
+    def __init__(self, sense=30):
         self.events = []
-        self.sense = 200
+        self.sense = sense
 
 # submarine
 
@@ -137,6 +145,10 @@ class Hull:
         self.cost = HULL_TIERS[tier][0]
 
 
+class HP:
+    def __init__(self, hp_max=1):
+        self.hp_max = hp_max
+        self.hp = self.hp_max
 
 # modules
 
@@ -191,28 +203,28 @@ class Weakness_Piercing:
 
 class StatusElec:
     NAME = "electrified"
-    def __init__(self, duration=1):
-        self.duration = duration
+    def __init__(self, t=1):
+        self.timer = t
 class StatusStun:
     NAME = "stunned"
-    def __init__(self, duration=1):
-        self.duration = duration
+    def __init__(self, t=1):
+        self.timer = t
 class StatusInked:
     NAME = "inked"
-    def __init__(self, duration=1):
-        self.duration = duration
+    def __init__(self, t=1):
+        self.timer = t
 class StatusFear:
     NAME = "frightened"
-    def __init__(self, duration=1):
-        self.duration = duration
+    def __init__(self, t=1):
+        self.timer = t
 class StatusWeak:
     NAME = "weakened"
-    def __init__(self, duration=1):
-        self.duration = duration
+    def __init__(self, t=1):
+        self.timer = t
 class StatusFrenzied:
     NAME = "frenzied"
-    def __init__(self, duration=1):
-        self.duration = duration
+    def __init__(self, t=1):
+        self.timer = t
 
 STATUSES={
     "electrified" : StatusElec,

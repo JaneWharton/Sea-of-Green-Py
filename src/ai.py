@@ -49,15 +49,26 @@ def ai_swarm(bot):
     # if one is injured, all go into a frenzy and start killing everything
     # that isn't a member of their own species
 
-def ai_rise(bot):
+def ai_bubbles(bot):
     rog.spendAP(bot, 1)
+    if rog.get_status(bot, cmp.StatusStun):
+        return
     pos = rog.world().component_for_entity(bot, cmp.Position)
     if rog.wallat(pos.x,pos.y - 1):
         rog.kill(bot)
     rog.nudge(bot, 0, -1)
-def ai_fall(bot):
-    rog.nudge(bot, 0, 1)
+def ai_mine(bot):
+    world = rog.world()
     rog.spendAP(bot, 1)
+    if rog.get_status(bot, cmp.StatusStun):
+        return
+    pos = world.component_for_entity(bot, cmp.Position)
+    if rog.wallat(pos.x,pos.y + 1):
+        mine = world.component_for_entity(bot, cmp.Mine)
+        rog.kill(bot)
+        rog.explode(pos.x,pos.y + 1, 1, mine.damage)
+        return
+    rog.nudge(bot, 0, 1)
 
 
 ##def tick(ent): # handled by a processor now

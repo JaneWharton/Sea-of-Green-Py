@@ -18,6 +18,7 @@
 '''
 
 import math
+import tcod as libtcod
 
 from const import *
 import rogue as rog
@@ -71,7 +72,7 @@ class GameStateManager(Manager):
 # manager listeners
 class Manager_Listener: # listens for a result from a game state Manager.
     def alert(self, result): # after we get a result, purpose is finished.
-        manager_listeners_remove(self) # delete the reference to self.
+        rog.manager_listeners_remove(self) # delete the reference to self.
 
 
 
@@ -86,6 +87,9 @@ class Manager_FOV(Manager):
             rog.fov_compute(ent)
     def update(self, ent): # add entity to the set
         self._updates.add(ent)
+    def update_all(self):
+        for ent,compo in rog.world().get_component(cmp.SenseSight):
+            self._updates.add(ent)
 
 
 

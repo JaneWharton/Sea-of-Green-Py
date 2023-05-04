@@ -154,24 +154,42 @@ def examine_pc(pc, item):
 
 # modules
 
-def screw_dash(pc, tile):
-    pos = Rogue.world.component_for_entity(pc, cmp.Position)
-    xt,yt = (pos.x, pos.y,)
-    xf,yf = tile
-    move(pc, xf, yf)
+
+def use_screw_pc(pc, module):
+    world = rog.world()
+
+    module.toggle()
+    rog.msg("Screw overdrive is now {}.".format("on" if module.active else "off"))
+    
+    rog.update_game()
+    rog.update_hud()
     
     # use up energy (TODO)
     # make sound (TODO)
     
-    print("dash to tile [{}, {}] from tile [{}, {}]".format(xt,yt,xf,yf))
-def use_screw_pc(pc):
-    rog.ability_dash(x,y,screw_dash)
+##    direction = rog.get_direction("Dash left or right?")
+##    if (direction!=(1,0,0) and direction!=(-1,0,0)):
+##        return
+##
+##    for _ in range(2):
+##        rog.nudge(pc, direction[0], 0)
+##    
+##    rog.spendAP(pc, 1)
+##    rog.update_game()
+##    rog.update_hud()
 
-def use_torpedo_pc(pc):
-    # DEBUG: why does bubble move two spaces in first turn
-    # figure out why HUD not displaying after firing torpedo
-    
+def use_torpedo_pc(pc, module):
+
     world = rog.world()
+    
+    if module.quantity <= 0:
+        rog.alert("Out of ammo. Return to the surface to resupply.")
+        return
+    nrgCost = module.get_energy()
+    if rog.get_power(pc) < nrgCost:
+        rog.alert("Out of power! Return to the surface to recharge!")
+        return
+    
     direction = rog.get_direction("Fire torpedo left or right?")
     if (direction!=(1,0,0) and direction!=(-1,0,0)):
         return
@@ -184,13 +202,42 @@ def use_torpedo_pc(pc):
     if not rog.wallat(x2,y):
         rog.create_bubbles(x2,y)
     # fire the torpedo
-    modular = world.component_for_entity(pc, cmp.Modularity)
-    for module in modular.modules.values():
-        if type(module)==entities.Gear_Torpedo:
-            damage = module.get_damage()
-            dmgType = module.get_damage_type()
-    rog.create_torpedo(x1,y,direction[0],damage,dmgType)
+    damage = module.get_damage()
+    dmgType = module.get_damage_type()
+    
     rog.spendAP(pc, 1)
+    module.decrement_uses()
+    rog.drain_power(pc, nrgCost)
+    rog.create_torpedo(x1,y,direction[0],damage,dmgType)
+    
+def use_mine_pc(pc, module):
+
+    world = rog.world()
+    
+    if module.quantity <= 0:
+        rog.alert("Out of ammo. Return to the surface to resupply.")
+        return
+    nrgCost = module.get_energy()
+    if rog.get_power(pc) < nrgCost:
+        rog.alert("Out of power! Return to the surface to recharge!")
+        return
+
+    pos = world.component_for_entity(pc, cmp.Position)
+    
+    rog.spendAP(pc, 1)
+    module.decrement_uses()
+    rog.drain_power(pc, nrgCost)
+    
+    # move up
+    x=pos.x
+    y=pos.y
+    if not rog.wallat(x,y-1):
+        rog.nudge(pc, 0,-1)
+    # drop mine
+    mine = rog.create_mine(x,y,module.get_damage())
+    rog.set_status(mine, cmp.StatusStun, 2)
+    
+    
 
     
 

@@ -113,6 +113,7 @@ CH_TRC      = [191, 184, 187] # top-right corner
     #     Game Constants     #
     #------------------------#
 
+STARTING_TIME = 25200
 MASS_PLAYER = 100
 
 
@@ -124,6 +125,9 @@ ROOMW       = 80        # max dungeon level size, width
 ROOMH       = 50        # ", height
 MAXLEVEL    = 10        # deepest dungeon level
 
+
+SCREW_OD_VOLUME = 2 # overdrive volume multiplier
+SCREW_OD_ENERGY = 3 # overdrive energy cost multiplier
 
 #
 # Tiles
@@ -182,7 +186,7 @@ GEAR_ELECTRIFIER = Symbol()
 
 OXYGEN_TIERS={
     # tier  : cost, oxygen max
-    0       : (5,   120,),
+    0       : (10,  120,),
     1       : (25,  240,),
     2       : (125, 480,),
     3       : (500, 960,),
@@ -191,17 +195,17 @@ OXYGEN_TIERS={
 }
 BATTERY_TIERS={
     # tier  : cost, energy max
-    0       : (5,   400,),
-    1       : (20,  800,),
-    2       : (100, 1600,),
-    3       : (600, 3200,),
-    4       : (3000,6400,),
-    5       : (9500,12800,),
+    0       : (5,   600,),
+    1       : (20,  1200,),
+    2       : (100, 2500,),
+    3       : (600, 5000,),
+    4       : (3000,10000,),
+    5       : (9500,20000,),
 }
 ENGINE_TIERS={
     # tier  : cost, +energy/turn
-    0       : (10,  1,),
-    1       : (40,  2,),
+    0       : (20,  1,),
+    1       : (60,  2,),
     2       : (360, 3,),
     3       : (960, 4,),
     4       : (3600,6,),
@@ -214,7 +218,16 @@ HULL_TIERS={
     2       : (400, 6,),
     3       : (1200,8,),
     4       : (2600,10,),
-    5       : (6000,12,),
+    5       : (6400,12,),
+}
+LIGHT_TIERS={
+    # tier  : cost, light radius
+    0       : (5,   6,),
+    1       : (30,  10,),
+    2       : (120, 15,),
+    3       : (500, 20,),
+    4       : (1200,25,),
+    5       : (3000,30,),
 }
 TREASURE={
     # depth : (%spawnRate, minGold, maxGold,),

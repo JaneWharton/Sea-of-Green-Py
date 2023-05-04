@@ -20,12 +20,24 @@ def create_bubbles(x,y):
         cmp.Name("bubbles"),
         cmp.Image(random.choice((19,20,)), COL['accent'], COL['black']),
         cmp.Actor(),
-        cmp.AI(ai.ai_rise),
+        cmp.AI(ai.ai_bubbles),
         cmp.Position(x,y),
         cmp.Opaque(),
         cmp.Flags()
         )
     return ent
+
+def create_chest(x,y,gold):
+    ent = rog.world().create_entity(
+        cmp.Name("chest"),
+        cmp.Image(18, COL['gold'], COL['black']),
+        cmp.Position(x,y),
+        cmp.Opaque(),
+        cmp.Reward(gold),
+        cmp.Flags()
+        )
+    return ent
+
 
 def create_npc(x,y):
     world=rog.world()
@@ -304,8 +316,14 @@ def module_level_up(module):
 
 class Gear:
     MOVE_DIRECTIONS = [] # for regular movement (not counting harpoon, ink jets, etc.)
+    def __init__(self):
+        self.quantity = -1
+        self.level = 0
+        self.active = False
+    def toggle(self):
+        self.active = not self.active
     def get_cost(self):
-        return self.__COST
+        return self.COST
     def get_energy(self):
         return self.ENERGY[self.level]
     def get_volume(self):
@@ -326,52 +344,63 @@ class Gear:
         return self.STUN[self.level]
     def get_range(self):
         return self.RANGE[self.level]
+    def decrement_uses(self):
+        self.quantity = max(self.quantity - 1, 0)
+    def refill_uses(self):
+        self.quantity = self.get_uses()
 
 class Gear_Screw(Gear):
     NAME = "Screw"
     DESCRIPTION = "Permits horizontal movement and rapid dashing; quite loud."
-    __ID = GEAR_SCREW
-    __COST = 50
-    __CHAR = 160
+    # dash moves 2 spaces, doubles the volume, and uses triple amount of energy.
+    ID = GEAR_SCREW
+    COST = 50
+    CHAR = 160
     ENERGY = [8, 7, 6, 6] # Level 0, 1, 2, 3
-    VOLUME = [48, 40, 32, 32]
+    USES = None
+    VOLUME = [32, 28, 24, 20]
     MOVE_DIRECTIONS = [(-1,0),(1,0)]
-    MOVE = [2, 2, 2, 3] # when you Use the Screw (dash) you can move up to this many tiles
-        # dash uses +8 energy per tile moved, and doubles the volume.
     def __init__(self):
+        super(Gear_Screw, self).__init__()
         self.level = 0
 class Gear_BallastTank(Gear): 
     NAME = "Ballast Tanks"
     DESCRIPTION = "Permits silent vertical movement."
-    __ID = GEAR_BALLASTTANK
-    __COST = 50
-    __CHAR = 161
-    ENERGY = [7, 6, 5, 4]
+    ID = GEAR_BALLASTTANK
+    COST = 50
+    CHAR = 161
+    ENERGY = [6, 5, 4, 3]
+    USES = None
     VOLUME = [6, 4, 2, 0]
     MOVE_DIRECTIONS = [(0,-1),(0,1)]
     def __init__(self):
+        super(Gear_BallastTank, self).__init__()
         self.level = 0
 class Gear_PumpJet(Gear):
     NAME = "Pump-Jets"
     DESCRIPTION = "Permits quiet cardinal movement. Drains batteries quickly."
-    __ID = GEAR_PUMPJET
-    __COST = 200
-    __CHAR = 162
+    ID = GEAR_PUMPJET
+    COST = 200
+    CHAR = 162
     ENERGY = [10, 9, 8, 7] # Level 0, 1, 2, 3
+    USES = None
     VOLUME = [12, 10, 8, 6]
     MOVE_DIRECTIONS = [(-1,0),(1,0),(0,1),(0,-1)]
     def __init__(self):
+        super(Gear_PumpJet, self).__init__()
         self.level = 0
 class Gear_ControlSurfaces(Gear):
     NAME = "Control Surfaces"
     DESCRIPTION = "Permits diagonal movement."
-    __ID = GEAR_CONTROLSURFACE
-    __COST = 150
-    __CHAR = 163
+    ID = GEAR_CONTROLSURFACE
+    COST = 150
+    CHAR = 163
     ENERGY = [9, 8, 7, 6] # Level 0, 1, 2, 3
+    USES = None
     VOLUME = [24, 20, 16, 12]
     MOVE_DIRECTIONS = [(-1,-1),(1,1),(-1,1),(1,-1)]
     def __init__(self):
+        super(Gear_ControlSurfaces, self).__init__()
         self.level = 0
 class Gear_SonarPulse(Gear):  # AOE damage around player;
         # Status Hell for target:
@@ -381,127 +410,141 @@ class Gear_SonarPulse(Gear):  # AOE damage around player;
         # Also reveals locations of hidden passageways in radius.
     NAME = "Sonar Pulse"
     DESCRIPTION = "AoE damage around sub. Induces various status effects."
-    __ID = GEAR_SONARPULSE
-    __COST = 100
-    __CHAR = 164
+    ID = GEAR_SONARPULSE
+    COST = 100
+    CHAR = 164
     ENERGY = [80, 90, 100, 110]
+    USES = None
     DAMAGE = [1, 1, 1, 1]
     RANGE = [3, 4, 5, 6] # radius
     VOLUME = [64, 80, 96, 108]
     DURATION = [2, 3, 4, 5] # duration of all status effects
     DAMAGETYPE = DMG_SOUND
     def __init__(self):
+        super(Gear_SonarPulse, self).__init__()
         self.level = 0
-class Gear_InkJet(Gear):  # Shoot ink in target cardinal direction, and move in the opposite direction
+class Gear_InkJet(Gear):  # move in cardinal direction, and Shoot ink in opposite direction, 
                     # Ink coats target, blinding them. Also obscures vision
     NAME = "Ink Jets"
-    DESCRIPTION = "Shoot blinding ink; launch self in the opposite direction."
-    __ID = GEAR_INKCLOUD
-    __COST = 150
-    __CHAR = 165
+    DESCRIPTION = "Launch self in cardinal dir.; shoot blinding ink in opposite dir."
+    ID = GEAR_INKCLOUD
+    COST = 150
+    CHAR = 165
     ENERGY = [12, 11, 10, 9]
+    USES = [4, 8, 16, 32]
     DAMAGE = [0, 0, 0, 1]
     MOVE = [1, 2, 3, 4] # maximum amount of tiles you can move
     DURATION = [5, 10, 15, 20] # duration of ink cloud AND ink status
-    USES = [4, 8, 16, 32]
     VOLUME = [32, 24, 20, 18]
     def __init__(self):
+        super(Gear_InkJet, self).__init__()
         self.level = 0
 class Gear_Torpedo(Gear): # create bubbles behind player; fire missile forward cardinal direction
     NAME = "Torpedos"
     DESCRIPTION = "Launch missile in horizontal dir.; create bubbles behind."
-    __ID = GEAR_TORPEDO
-    __COST = 100
-    __CHAR = 166
+    ID = GEAR_TORPEDO
+    COST = 100
+    CHAR = 166
     ENERGY = [1, 1, 1, 1]
-    DAMAGE = [2, 2, 2, 2]
     USES = [4, 8, 12, 16]
+    DAMAGE = [2, 2, 2, 2]
+    MOVE = [1, 1, 2, 2] # push amount
     VOLUME = [120, 120, 120, 120]
     DAMAGETYPE = DMG_PHYSICAL
     def __init__(self):
+        super(Gear_Torpedo, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
-class Gear_SuperTorpedo(Gear): # create bubbles all along path of missile;
-                         # fire missile forward cardinal direction
+class Gear_SuperTorpedo(Gear): # fire missile forward cardinal direction
                          # destroys walls on contact
     NAME = "Super Torpedos"
-    DESCRIPTION = "Launch deadly missile in horiozontal dir.; bubbles along path."
-    __ID = GEAR_SUPERTORPEDO
-    __COST = 500
-    __CHAR = 167
+    DESCRIPTION = "Launch AoE missile in horizontal direction; destroys everything."
+    ID = GEAR_SUPERTORPEDO
+    COST = 500
+    CHAR = 167
     ENERGY = [2, 2, 2, 2]
-    DAMAGE = [4, 5, 6, 7]
     USES = [2, 3, 4, 5]
+    DAMAGE = [4, 5, 6, 7]
+    SPEED = [10, 10, 10, 10]
+    RANGE = [2, 2, 3, 3] #explosion radius
     VOLUME = [150, 150, 150, 150]
     DAMAGETYPE = DMG_PIERCING
     def __init__(self):
+        super(Gear_SuperTorpedo, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
 class Gear_Mine(Gear): # move up one tile; drop single-target mine downward. Stuns on contact.
     NAME = "Mines"
-    DESCRIPTION = "Move up one tile and drop a stunning mine downward."
-    __ID = GEAR_MINE
-    __COST = 150
-    __CHAR = 168
+    DESCRIPTION = "Move up one tile and deploy stunning mine downward."
+    ID = GEAR_MINE
+    COST = 150
+    CHAR = 168
     ENERGY = [0, 0, 0, 0]
-    DAMAGE = [1, 1, 1, 1]
     USES = [10, 15, 20, 30]
+    DAMAGE = [1, 1, 1, 1]
     VOLUME = [80, 80, 80, 80]
     STUN = [1, 2, 3, 4]
     DAMAGETYPE = DMG_PHYSICAL
     def __init__(self):
+        super(Gear_Mine, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
 class Gear_DepthCharge(Gear): # drop powerful time bomb that detonates within a small blast radius
-                                # destroys walls in blast radius
+                              # destroys walls in blast radius
+                              # also create bubbles above submarine
     NAME = "Depth Charges"
-    DESCRIPTION = "Drop a powerful time bomb with a small blast radius."
-    __ID = GEAR_DEPTHCHARGE
-    __COST = 300
-    __CHAR = 169
+    DESCRIPTION = "Deploy destructive time bomb with a small blast radius."
+    ID = GEAR_DEPTHCHARGE
+    COST = 300
+    CHAR = 169
     ENERGY = [0, 0, 0, 0]
-    DAMAGE = [2, 2, 3, 3]
-    RANGE = [2, 2, 2, 3] # blast radius size
     USES = [2, 4, 6, 8]
+    DAMAGE = [2, 2, 3, 3]
+    RANGE = [2, 2, 3, 3] # blast radius size
     TIMER = [5, 5, 5, 5]
-    VOLUME = [100, 100, 120, 120]
+    VOLUME = [150, 150, 150, 150]
     DAMAGETYPE = DMG_PHYSICAL
     def __init__(self):
+        super(Gear_DepthCharge, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
 class Gear_Harpoon(Gear): # shoot missile forward cardinal direction
                     # pull target to player, or player to target based on mass
                     # moves up to X squares based on level
     NAME = "Harpoon"
-    DESCRIPTION = "Fire harpoon in horizontal dir. to pull things in."
-    __ID = GEAR_HARPOON
-    __COST = 500
-    __CHAR = 170
+    DESCRIPTION = "Fire harpoon in horizontal dir. to pull things (or self) closer."
+    ID = GEAR_HARPOON
+    COST = 500
+    CHAR = 170
     ENERGY = [28, 26, 24, 22]
+    USES = None
     DAMAGE = [1, 1, 1, 1]
-    RANGE = [5, 10, 20, 30]
-    MOVE = [3, 5, 7, 10] # max amount of tiles you can pull / be pulled
+    RANGE = [5, 10, 15, 20]
+    MOVE = [2, 4, 6, 10] # max amount of tiles you can pull / be pulled
     VOLUME = [60, 55, 50, 45]
     DAMAGETYPE = DMG_PHYSICAL
     def __init__(self):
+        super(Gear_Harpoon, self).__init__()
         self.level = 0
 class Gear_Electrifier(Gear): # shock adjacent target to left or right
     NAME = "Electrifier"
     DESCRIPTION = "Shocks and stuns adjacent target in horizontal direction."
-    __ID = GEAR_ELECTRIFIER
-    __COST = 200
-    __CHAR = 171
-    ENERGY = [50, 60, 70, 80]
+    ID = GEAR_ELECTRIFIER
+    COST = 200
+    CHAR = 171
+    ENERGY = [50, 55, 60, 65]
+    USES = None
     DAMAGE = [2, 2, 3, 4]
     STUN = [3, 5, 6, 7]
     VOLUME = [48, 54, 60, 66]
     DAMAGETYPE = DMG_ELECTRIC
     def __init__(self):
+        super(Gear_Electrifier, self).__init__()
         self.level = 0
 class Gear_(Gear):
     NAME = ""
-    __ID = 0
-    __COST = 2
+    ID = 0
+    COST = 2
     ENERGY = [0, 0, 0, 0]
     def __init__(self):
         self.level = 1

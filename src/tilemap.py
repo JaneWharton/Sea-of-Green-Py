@@ -148,7 +148,7 @@ RENDERER:
     def get_color(self,x,y):        return COL[self.grid_terrain[x][y].fg]
     def get_bgcolor(self,x,y):
         if self.tileat(x,y) == TILE_OCEAN:
-            choices=['deep','ocean','vdkgreen','dkteal']
+            choices=['dkteal','vdkgreen','ocean','deep',]
             index = (x + y//2 + self.ocean_wave + round(random.random()*1.2)) % 4
             bgCol=COL[choices[index]]
         else: bgCol=COL[ self.grid_terrain[x][y].bg ]
@@ -250,6 +250,17 @@ RENDERER:
         levelgen.generate_level(self.w, self.h, level, algo=algo)
     
     # add tile (set tile) in the grid
+
+    def set_opacity(self, x,y, value): # True == opaque, False == transparent
+        self._update_fov_map_cell_opacity(x,y, not value)
+    def reset_opacity(self, x,y):
+        blocksSight=self.get_blocks_sight(x,y)
+        for ent in self.thingsat(x,y):
+            print("thing here!")
+            if rog.world().has_component(ent, cmp.Opaque):
+                blocksSight = True
+                break
+        self._update_fov_map_cell_opacity(x,y,(not blocksSight))
                  
     def tile_change(self, x,y, typ):
         '''
@@ -299,21 +310,33 @@ RENDERER:
         
     def add_thing(self, ent):
         ''' try to add a thing to the grid, return success/failure '''
-        if not rog.world().has_component(ent, cmp.Position):
+
+        world = rog.world()
+        
+        if not world.has_component(ent, cmp.Position):
             print('''Failed to add entity {} to grid.
 Reason: entity has no position component.'''.format(ent))
             return False
+        
         # this assertion will test that things are working properly
         # but no assertions should exist in production, ESPECIALLY not
         # this one or similar which may slow the game down (this is O(n))
 ##        assert(ent not in self.grid_things[x][y])
-        pos = rog.world().component_for_entity(ent, cmp.Position)
+        pos = world.component_for_entity(ent, cmp.Position)
         x = pos.x; y = pos.y;
+        
+        if world.has_component(ent, cmp.Opaque): # entity opacity
+            pos = world.component_for_entity(ent, cmp.Position)
+            self.set_opacity(x,y, True)
+
         if self.monat(x,y): 
-            if rog.world().has_component(ent, cmp.Creature):
+            if world.has_component(ent, cmp.Creature):
                 return False #only one creature per tile is allowed
             else: #insert thing right below the creature
-                self.grid_things[x][y][-1:0] = [ent]
+                if world.component_for_entity(ent, cmp.Image).priority:
+                    self.grid_things[x][y].append(ent)
+                else:
+                    self.grid_things[x][y][-1:0] = [ent]
                 return True
         else: #insert thing at top of the list
             self.grid_things[x][y].append(ent)
@@ -321,13 +344,20 @@ Reason: entity has no position component.'''.format(ent))
     
     def remove_thing(self, ent):
         ''' try to remove an entity from the grid, return success/failure '''
-        if not rog.world().has_component(ent, cmp.Position):
+
+        world = rog.world()
+        
+        if not world.has_component(ent, cmp.Position):
             return False
-        pos = rog.world().component_for_entity(ent, cmp.Position)
+        
+        pos = world.component_for_entity(ent, cmp.Position)
         tile = self.grid_things[pos.x][pos.y]
         if ent in tile:
             tile.remove(ent)
+            if world.has_component(ent, cmp.Opaque): # entity opacity
+                self.reset_opacity(pos.x,pos.y)
             return True
+        
 ##        print('''Error: failed to remove entity {} from grid.
 ##Reason: entity not in grid.'''.format(ent))
         return False #thing was not in the grid.
@@ -353,7 +383,7 @@ Reason: entity has no position component.'''.format(ent))
     # draw functions
     
     def render_gameArea(self, pc, view_x,view_y,view_w,view_h):
-        sight=200
+        sight=rog.world().component_for_entity(pc, cmp.SenseSight).sense
 ##        self._create_memories(pc, sight)
         self._recall_memories( view_x,view_y,view_w,view_h)
         
@@ -363,7 +393,8 @@ Reason: entity has no position component.'''.format(ent))
         
     def get_map_state(self):
         self._recall_memories( 0,0,ROOMW,ROOMH)
-        self._draw_what_player_sees(rog.pc(), rog.getms(rog.pc(),'sight'))
+        sight = rog.world().component_for_entity(rog.pc(), cmp.SenseSight)
+        self._draw_what_player_sees(rog.pc(), sight.sense)
         return self.con_map_state
     
     # A* paths wrappers
@@ -418,6 +449,8 @@ Reason: entity has no position component.'''.format(ent))
         
     def _update_fov_map_cell_opacity(self, x,y, value):
         libtcod.map_set_properties( self.fov_map, x, y, value, True)
+        # TODO: figure out if there is a BETTER WAY to do this...
+        rog.update_all_fovs() #this might be slow.
     
     def _recall_memories(self, view_x,view_y, view_w,view_h):
         libtcod.console_blit(self.con_memories, view_x,view_y,view_w,view_h,
@@ -464,6 +497,8 @@ Reason: entity has no position component.'''.format(ent))
                         char = rend.char if visibility > 1 else '?'
                         
                         if not entDrawn: # draw top entity
+                            if rog.on(ent, DEAD):
+                                continue # don't discover creatures
                             entDrawn = True
                             # get render data
                             fgcol=rend.fgcol
