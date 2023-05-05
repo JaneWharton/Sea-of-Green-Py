@@ -91,8 +91,11 @@ class Creature:
         pass
 
 class Mine:
-    def __init__(self, damage):
+    def __init__(self, damage=1, radius=0, timer=-1, volume=1):
         self.damage=damage
+        self.radius=radius
+        self.timer=timer
+        self.volume=volume
     
 class LightSource:
     def __init__(self, lightID, light):

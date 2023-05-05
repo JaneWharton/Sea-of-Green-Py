@@ -351,7 +351,7 @@ class Gear:
 
 class Gear_Screw(Gear):
     NAME = "Screw"
-    DESCRIPTION = "Permits horizontal movement and rapid dashing; quite loud."
+    DESCRIPTION = "Permits horizontal movement and rapid dashing, but is loud."
     # dash moves 2 spaces, doubles the volume, and uses triple amount of energy.
     ID = GEAR_SCREW
     COST = 50
@@ -363,6 +363,7 @@ class Gear_Screw(Gear):
     def __init__(self):
         super(Gear_Screw, self).__init__()
         self.level = 0
+        
 class Gear_BallastTank(Gear): 
     NAME = "Ballast Tanks"
     DESCRIPTION = "Permits silent vertical movement."
@@ -376,9 +377,10 @@ class Gear_BallastTank(Gear):
     def __init__(self):
         super(Gear_BallastTank, self).__init__()
         self.level = 0
+        
 class Gear_PumpJet(Gear):
     NAME = "Pump-Jets"
-    DESCRIPTION = "Permits quiet cardinal movement. Drains batteries quickly."
+    DESCRIPTION = "Permits quiet cardinal movement."
     ID = GEAR_PUMPJET
     COST = 200
     CHAR = 162
@@ -389,6 +391,7 @@ class Gear_PumpJet(Gear):
     def __init__(self):
         super(Gear_PumpJet, self).__init__()
         self.level = 0
+        
 class Gear_ControlSurfaces(Gear):
     NAME = "Control Surfaces"
     DESCRIPTION = "Permits diagonal movement."
@@ -402,6 +405,7 @@ class Gear_ControlSurfaces(Gear):
     def __init__(self):
         super(Gear_ControlSurfaces, self).__init__()
         self.level = 0
+        
 class Gear_SonarPulse(Gear):  # AOE damage around player;
         # Status Hell for target:
         # stuns some enemies; scares some enemies;
@@ -409,7 +413,7 @@ class Gear_SonarPulse(Gear):  # AOE damage around player;
         # makes target weak to physical damage for duration.
         # Also reveals locations of hidden passageways in radius.
     NAME = "Sonar Pulse"
-    DESCRIPTION = "AoE damage around sub. Induces various status effects."
+    DESCRIPTION = "AoE damage around sub; induces various status effects."
     ID = GEAR_SONARPULSE
     COST = 100
     CHAR = 164
@@ -423,25 +427,27 @@ class Gear_SonarPulse(Gear):  # AOE damage around player;
     def __init__(self):
         super(Gear_SonarPulse, self).__init__()
         self.level = 0
+        
 class Gear_InkJet(Gear):  # move in cardinal direction, and Shoot ink in opposite direction, 
                     # Ink coats target, blinding them. Also obscures vision
     NAME = "Ink Jets"
-    DESCRIPTION = "Launch self in cardinal dir.; shoot blinding ink in opposite dir."
+    DESCRIPTION = "Launch self in cardinal direction; shoot blinding ink behind."
     ID = GEAR_INKCLOUD
     COST = 150
     CHAR = 165
     ENERGY = [12, 11, 10, 9]
     USES = [4, 8, 16, 32]
-    DAMAGE = [0, 0, 0, 1]
+    DAMAGE = [1, 1, 1, 1]
     MOVE = [1, 2, 3, 4] # maximum amount of tiles you can move
     DURATION = [5, 10, 15, 20] # duration of ink cloud AND ink status
     VOLUME = [32, 24, 20, 18]
     def __init__(self):
         super(Gear_InkJet, self).__init__()
         self.level = 0
+        
 class Gear_Torpedo(Gear): # create bubbles behind player; fire missile forward cardinal direction
     NAME = "Torpedos"
-    DESCRIPTION = "Launch missile in horizontal dir.; create bubbles behind."
+    DESCRIPTION = "Launch missile in horizontal direction & create bubbles behind."
     ID = GEAR_TORPEDO
     COST = 100
     CHAR = 166
@@ -455,10 +461,11 @@ class Gear_Torpedo(Gear): # create bubbles behind player; fire missile forward c
         super(Gear_Torpedo, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
+        
 class Gear_SuperTorpedo(Gear): # fire missile forward cardinal direction
                          # destroys walls on contact
     NAME = "Super Torpedos"
-    DESCRIPTION = "Launch AoE missile in horizontal direction; destroys everything."
+    DESCRIPTION = "Launch highly destructive AoE missile in horizontal direction."
     ID = GEAR_SUPERTORPEDO
     COST = 500
     CHAR = 167
@@ -473,9 +480,11 @@ class Gear_SuperTorpedo(Gear): # fire missile forward cardinal direction
         super(Gear_SuperTorpedo, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
-class Gear_Mine(Gear): # move up one tile; drop single-target mine downward. Stuns on contact.
+        
+class Gear_Mine(Gear): # create bubbles;
+                        # drop single-target mine downward. Stuns on contact.
     NAME = "Mines"
-    DESCRIPTION = "Move up one tile and deploy stunning mine downward."
+    DESCRIPTION = "Deploy stunning mine downward & create bubbles."
     ID = GEAR_MINE
     COST = 150
     CHAR = 168
@@ -489,11 +498,12 @@ class Gear_Mine(Gear): # move up one tile; drop single-target mine downward. Stu
         super(Gear_Mine, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
+        
 class Gear_DepthCharge(Gear): # drop powerful time bomb that detonates within a small blast radius
                               # destroys walls in blast radius
-                              # also create bubbles above submarine
+                              # also move submarine up one tile
     NAME = "Depth Charges"
-    DESCRIPTION = "Deploy destructive time bomb with a small blast radius."
+    DESCRIPTION = "Move up 1 tile & deploy deadly time bomb with a compact blast radius."
     ID = GEAR_DEPTHCHARGE
     COST = 300
     CHAR = 169
@@ -508,6 +518,7 @@ class Gear_DepthCharge(Gear): # drop powerful time bomb that detonates within a 
         super(Gear_DepthCharge, self).__init__()
         self.level = 0
         self.quantity = self.USES[0]
+        
 class Gear_Harpoon(Gear): # shoot missile forward cardinal direction
                     # pull target to player, or player to target based on mass
                     # moves up to X squares based on level
@@ -526,6 +537,7 @@ class Gear_Harpoon(Gear): # shoot missile forward cardinal direction
     def __init__(self):
         super(Gear_Harpoon, self).__init__()
         self.level = 0
+        
 class Gear_Electrifier(Gear): # shock adjacent target to left or right
     NAME = "Electrifier"
     DESCRIPTION = "Shocks and stuns adjacent target in horizontal direction."
@@ -535,12 +547,13 @@ class Gear_Electrifier(Gear): # shock adjacent target to left or right
     ENERGY = [50, 55, 60, 65]
     USES = None
     DAMAGE = [2, 2, 3, 4]
-    STUN = [3, 5, 6, 7]
+    STUN = [3, 4, 5, 6]
     VOLUME = [48, 54, 60, 66]
     DAMAGETYPE = DMG_ELECTRIC
     def __init__(self):
         super(Gear_Electrifier, self).__init__()
         self.level = 0
+        
 class Gear_(Gear):
     NAME = ""
     ID = 0

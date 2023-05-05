@@ -209,8 +209,44 @@ def use_torpedo_pc(pc, module):
     module.decrement_uses()
     rog.drain_power(pc, nrgCost)
     rog.create_torpedo(x1,y,direction[0],damage,dmgType)
+    rog.update_game()
+    rog.update_base()
+    rog.update_final()
+    rog.update_hud()
+    rog.enable_refresh_manager()
     
 def use_mine_pc(pc, module):
+
+    world = rog.world()
+    
+    if module.quantity <= 0:
+        rog.alert("Out of ammo. Return to the surface to resupply.")
+        return
+    nrgCost = module.get_energy()
+    if rog.get_power(pc) < nrgCost:
+        rog.alert("Out of power! Return to the surface to recharge!")
+        return
+
+    pos = world.component_for_entity(pc, cmp.Position)
+    
+    rog.spendAP(pc, 1)
+    module.decrement_uses()
+    rog.drain_power(pc, nrgCost)
+    
+##    # move up
+##    x=pos.x
+##    y=pos.y
+##    if not rog.wallat(x,y-1):
+##        rog.nudge(pc, 0,-1)
+    rog.create_bubbles(pos.x,pos.y)
+    # drop mine
+    mine = rog.create_mine(pos.x,pos.y, module.get_damage(), module.get_volume())
+    rog.update_game()
+    rog.update_base()
+    rog.update_final()
+    rog.update_hud()
+    
+def use_depthcharge_pc(pc, module):
 
     world = rog.world()
     
@@ -233,9 +269,16 @@ def use_mine_pc(pc, module):
     y=pos.y
     if not rog.wallat(x,y-1):
         rog.nudge(pc, 0,-1)
-    # drop mine
-    mine = rog.create_mine(x,y,module.get_damage())
-    rog.set_status(mine, cmp.StatusStun, 2)
+    # drop depth charge
+    charge = rog.create_depthcharge(
+        pos.x,pos.y,
+        module.get_damage(), module.get_range(),
+        module.get_timer(), module.get_volume()
+        )
+    rog.update_game()
+    rog.update_base()
+    rog.update_final()
+    rog.update_hud()
     
     
 

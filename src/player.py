@@ -178,6 +178,11 @@ def commands(pc, pcAct):
                     can_move = True
                     break
 
+            if rog.get_power(pc) < energy_cost:
+                can_move = False
+                rog.alert("Out of battery! Return to surface to recharge!")
+                rog.prompt(0,1,ROOMW,1,mode='wait')
+
             if not can_move:
                 return
             
@@ -199,11 +204,11 @@ def commands(pc, pcAct):
 
             if moved:
                 # expend energy
-                print("energy: ", energy_cost)
+##                print("energy: ", energy_cost)
                 rog.drain_power(pc, energy_cost)
                 # make sound
                      #TODO
-                print("volume: ", volume)
+##                print("volume: ", volume)
 
                 
             else:
@@ -414,7 +419,7 @@ def chargen(sx, sy):
         cmp.Flags(),
         cmp.Modularity()
         )
-    rog.add_module(player_ent, 1, entities.Gear_Mine())
+    rog.add_module(player_ent, 1, entities.Gear_DepthCharge())
     rog.add_module(player_ent, 2, entities.Gear_Screw())
     rog.add_module(player_ent, 3, entities.Gear_BallastTank())
 

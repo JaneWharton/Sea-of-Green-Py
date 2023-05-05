@@ -122,7 +122,7 @@ TILES_PER_COL = 16
 GAME_TITLE = "Sea of Green"
 
 ROOMW       = 80        # max dungeon level size, width
-ROOMH       = 50        # ", height
+ROOMH       = 47        # ", height
 MAXLEVEL    = 10        # deepest dungeon level
 
 

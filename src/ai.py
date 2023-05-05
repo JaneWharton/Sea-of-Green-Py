@@ -57,18 +57,28 @@ def ai_bubbles(bot):
     if rog.wallat(pos.x,pos.y - 1):
         rog.kill(bot)
     rog.nudge(bot, 0, -1)
+    
 def ai_mine(bot):
     world = rog.world()
+    mine = world.component_for_entity(bot, cmp.Mine)
+    pos = world.component_for_entity(bot, cmp.Position)
     rog.spendAP(bot, 1)
+    
+    def _splode():
+        rog.kill(bot)
+        rog.explode(pos.x,pos.y + 1, mine.radius, mine.damage)
+    
     if rog.get_status(bot, cmp.StatusStun):
         return
-    pos = world.component_for_entity(bot, cmp.Position)
     if rog.wallat(pos.x,pos.y + 1):
-        mine = world.component_for_entity(bot, cmp.Mine)
-        rog.kill(bot)
-        rog.explode(pos.x,pos.y + 1, 1, mine.damage)
+        _splode()
         return
+
     rog.nudge(bot, 0, 1)
+    if mine.timer > 0:
+        mine.timer -= 1
+        if mine.timer <= 0:
+            _splode()
 
 
 ##def tick(ent): # handled by a processor now

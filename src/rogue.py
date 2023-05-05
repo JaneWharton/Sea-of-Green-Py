@@ -470,8 +470,6 @@ def set_power(submarine, amount):
 def drain_power(submarine, amount):
     batt = Rogue.world.component_for_entity(submarine, cmp.Battery)
     batt.energy = max(batt.energy - amount, 0)
-    if batt.energy == 0:
-        kill(submarine) #temp
 
 def ceil(f): return math.ceil(f)
 def line(x1,y1,x2,y2):
@@ -551,6 +549,17 @@ def is_in_grid_x(x):    return (x>=0 and x<ROOMW)
 def is_in_grid_y(y):    return (y>=0 and y<ROOMH)
 def is_in_grid(x,y):    return (x>=0 and x<ROOMW and y>=0 and y<ROOMH)
 
+def tradius(x,y,r):
+    r = int(r)
+    if r==0:
+        return [(x,y)]
+    tiles = []
+    for tx in range(-r, r+1):
+        for ty in range(-r, r+1):
+            xx,yy = (x+tx, y+ty,)
+            if (abs(tx) + abs(ty) <= r and is_in_grid(xx,yy)):
+                tiles.append((xx,yy))
+    return tiles
 
 # view
 def getx(x):        return x + view_port_x() - view_x()
@@ -567,25 +576,6 @@ def mapy(y):        return y - view_port_y() + view_y()
 def entity_exists(ent):
     return ent in world._entities.keys()
 
-# getms: GET Modified Statistic (base stat + modifiers (permanent and conditional))
-def getms(ent, _var): # NOTE: must set the DIRTY_STATS flag to true whenever any stats or stat modifiers change in any way! Otherwise the function will return an old value!
-    world=Rogue.world
-    asserte(ent,world.has_component(ent,cmp.ModdedStats),"has no ModdedStats component.")
-    if on(ent, DIRTY_STATS): # dirty; re-calculate the stats first.
-        makenot(ent, DIRTY_STATS) # make sure we don't get caught in infinite loop...
-        modded=_update_stats(ent)
-        return modded.__dict__[_var]
-    return Rogue.world.component_for_entity(ent, cmp.ModdedStats).__dict__[_var]
-def getbase(ent, _var): # get Base statistic
-    return Rogue.world.component_for_entity(ent, cmp.Stats).__dict__[_var]
-# SET Stat -- set stat stat to value val set base stat 
-def sets(ent, stat, val):
-    Rogue.world.component_for_entity(ent, cmp.Stats).__dict__[stat] = val
-    make(ent, DIRTY_STATS)
-# ALTer Stat -- change stat stat by val value
-def alts(ent, stat, val):
-    Rogue.world.component_for_entity(ent, cmp.Stats).__dict__[stat] += val
-    make(ent, DIRTY_STATS)
 
 # flags
         # set flags
@@ -642,7 +632,7 @@ def nudge(ent,xd,yd):
     pos=Rogue.world.component_for_entity(ent, cmp.Position)
     x = pos.x + xd
     y = pos.y + yd
-    if getmap().tilefree(x,y):
+    if not wallat(x,y):
         port(ent, x, y)
         return True
     return False
@@ -666,22 +656,21 @@ def port(ent,x,y):
         for thing in stuffhere:
             if Rogue.world.has_component(thing, cmp.Mine):
                 mine = Rogue.world.component_for_entity(thing, cmp.Mine)
-                explode(x,y,1,mine.damage)
+                explode(x,y,mine.radius,mine.damage)
                 kill(thing)
                 break
 
 def explode(x,y, r, dmg):
-    # TODO: get all tiles in radius from center
-    # right now, radius r not accounted for.
-    
-    mon = monat(x,y)
-    if mon:
-        hurt(mon, dmg, DMG_PHYSICAL)
+
+    for tile in tradius(x,y,r):
+        xx,yy=tile
+        mon = monat(xx,yy)
+        if mon:
+            hurt(mon, dmg, DMG_PHYSICAL)
+        # create bubbles at site of explosion
+        create_bubbles(xx,yy)
     # explosion animation
-    animation_explosion(x,y)
-    # create bubbles at site of explosion
-    if not wallat(x,y):
-        create_bubbles(x,y)
+    animation_explosion(x,y,r)
 
 def setAP(ent, val):
     actor=Rogue.world.component_for_entity(ent, cmp.Actor)
@@ -911,7 +900,7 @@ def update_all_fovmaps():
     #----------------#
 
 def release_entity(ent):
-    print("released ", Rogue.world.component_for_entity(ent, cmp.Name).name)
+##    print("released ", Rogue.world.component_for_entity(ent, cmp.Name).name)
     # do a bunch of precautionary stuff / remove entity from registers ...
     remove_listener_sights(ent) 
     remove_listener_sounds(ent)
@@ -970,27 +959,35 @@ def create_corpse(ent):
 
 def create_bubbles(x,y):
     ent=entities.create_bubbles(x,y)
-    set_status(ent, cmp.StatusStun, 2)
+    set_status(ent, cmp.StatusStun, 1)
     grid_insert(ent)
     update_hud()
     return ent
 
-def create_mine(x,y,damage):
+def create_mine(x,y,damage,volume):
     ent = Rogue.world.create_entity(
         cmp.Name("mine"),
         cmp.Image(168, COL['accent'], COL['black']),
         cmp.Actor(),
         cmp.AI(ai.ai_mine),
         cmp.Position(x,y),
-        cmp.Mine(damage),
+        cmp.Mine(damage=damage,radius=0,volume=volume),
         cmp.Flags()
         )
     grid_insert(ent)
-    set_status(ent, cmp.StatusStun, 2)
-    update_game()
-    update_base()
-    update_final()
-    update_hud()
+    return ent
+
+def create_depthcharge(x,y,damage,radius,timer,volume):
+    ent = Rogue.world.create_entity(
+        cmp.Name("depth charge"),
+        cmp.Image(169, COL['accent'], COL['black']),
+        cmp.Actor(),
+        cmp.AI(ai.ai_mine),
+        cmp.Position(x,y),
+        cmp.Mine(damage=damage,radius=radius,timer=timer,volume=volume),
+        cmp.Flags()
+        )
+    grid_insert(ent)
     return ent
 
 def create_torpedo(x,y,direction,damage,dmgType):
@@ -1018,16 +1015,11 @@ def create_torpedo(x,y,direction,damage,dmgType):
         game_update()
         # torpedo move animation
         if not tilefree(pos.x,pos.y): #explode
-            explode(pos.x,pos.y, 1, damage)
+            explode(pos.x,pos.y, 0, damage)
             release_entity(torpedo)
             break
         port(torpedo, pos.x + direction, pos.y)
 ##        time.sleep(0.05)
-    update_game()
-    update_base()
-    update_final()
-    update_hud()
-    enable_refresh_manager()
 
     
 
@@ -1057,18 +1049,23 @@ def create_torpedo(x,y,direction,damage,dmgType):
 ##        world(), Rogue.pc, selectfunc, valid_tiles=valid_tiles)
 ##    manager_listeners_add(listener)
 
-def animation_explosion(x,y):
-    ent = Rogue.world.create_entity(
-        cmp.Name("explosion"),
-        cmp.Position(x,y),
-        cmp.Image(ANIM_BOOM[1][0], COL['red'], COL['black'], priority=True),
-        cmp.Animation(ANIM_BOOM[0], ANIM_BOOM[1]),
-        cmp.Flags()
-        )
-    grid_insert(ent)
-    animation = Rogue.world.component_for_entity(ent, cmp.Animation)
+def animation_explosion(x,y,r=0):
+    ents=[]
+    for tile in tradius(x,y,r):
+        xx,yy = tile
+        ent = Rogue.world.create_entity(
+            cmp.Name("explosion"),
+            cmp.Position(xx,yy),
+            cmp.Image(ANIM_BOOM[1][0], COL['red'], COL['black'], priority=True),
+            cmp.Animation(ANIM_BOOM[0], ANIM_BOOM[1]),
+            cmp.Flags()
+            )
+        ents.append(ent)
+        grid_insert(ent)
+    animation = Rogue.world.component_for_entity(ents[0], cmp.Animation)
     while animation.index < len(ANIM_BOOM[1]) - 1:
-        entities.animate(ent)
+        for explo in ents:
+            entities.animate(explo)
         time.sleep(1/animation.speed)
         update_game()
         update_final()

@@ -256,7 +256,7 @@ RENDERER:
     def reset_opacity(self, x,y):
         blocksSight=self.get_blocks_sight(x,y)
         for ent in self.thingsat(x,y):
-            print("thing here!")
+##            print("thing here!")
             if rog.world().has_component(ent, cmp.Opaque):
                 blocksSight = True
                 break
