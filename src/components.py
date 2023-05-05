@@ -15,6 +15,10 @@ class Position:
         self.x=x
         self.y=y
 
+class Bubbler:
+    def __init__(self, chance=1):
+        self.chance=chance # 0-1 float, chance of spawning bubbles each turn
+
 class Image:
     def __init__(self, char=0,fgcol=(0,0,0,),bgcol=(0,0,0,), priority=False):
         self.char = char

@@ -415,7 +415,7 @@ class Manager_MoveView(GameStateManager):
     def run(self, pcAct):
         super(Manager_MoveView, self).run(pcAct)
         
-        for act,args in pcAct:
+        for act,args in pcAct.items():
             if (act=="context-dir" or act=="move" or act=="menu-nav"):
                 self.move(args)
             elif act=="exit":   self.set_result("setPos")
@@ -479,7 +479,7 @@ class Manager_SelectTile(GameStateManager):
         super(Manager_SelectTile, self).run(pcAct)
         
         self.cursor_blink()
-        for act,arg in pcAct:
+        for act,arg in pcAct.items():
             if (act=='context-dir' or act=='move' or act=='menu-nav'):
                 self.nudge(arg)
             elif act=='rclick': self.rclick(arg)
@@ -634,7 +634,7 @@ class Manager_PrintScroll(GameStateManager):
         rog.update_final()
     
     def user_input(self, pcAct):
-        for act, arg in pcAct:
+        for act, arg in pcAct.items():
             if (act=="context-dir" or act=="move" or act=="menu-nav"):
                 self.y += arg[1]*self.scrollspd
                 self.y=maths.restrict(self.y,0,self.maxy)
@@ -926,7 +926,7 @@ class Manager_AimFindTarget(GameStateManager):
         super(Manager_AimFindTarget, self).run(pcAct)
         
         self.cursor_blink()
-        for act,arg in pcAct:
+        for act,arg in pcAct.items():
             if (act=='context-dir' or act=='move' or act=='menu-nav'):
                 self.nudge(arg)
             elif act=='rclick': self.rclick(arg)
@@ -1082,7 +1082,7 @@ class Aim_Manager_Listener(Manager_Listener):
 ##    
 ##    while True:
 ##        pcAct=IO.handle_mousekeys(IO.get_raw_input()).items()
-##        for act,arg in pcAct:
+##        for act,arg in pcAct.items():
 ##            
 ##            if (act=="context-dir" or act=="move" or act=="menu-nav"):
 ##                pass

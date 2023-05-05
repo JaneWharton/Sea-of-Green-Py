@@ -31,7 +31,7 @@ def main():
     rog.Rogue.create_const_managers()
     rog.Rogue.create_const_entities()
 
-    rog.init_keyBindings()
+##    rog.init_keyBindings()
         
     #map generation
     rog.getmap(rog.dlvl()).init_specialGrids() # inits fov_map; do this before you init terrain
@@ -72,6 +72,10 @@ def main():
     #               # MAIN GAME LOOP #              #
     #-----------------------------------------------#
 
+# TESTING!~
+##    while True:
+##        for event in libtcod.event.get():
+##            print(event)
 
     while rog.game_is_running():
 
@@ -86,8 +90,7 @@ def main():
             rog.game_set_state("game over")
         
         # get input #
-        pcInput=IO.get_raw_input()
-        pcAct=IO.handle_mousekeys(pcInput).items()
+        pcAct=IO.wait_for_command(rog.con_final())
         
         # commands that are available from anywhere #
         player.commands_const(pc, pcAct)

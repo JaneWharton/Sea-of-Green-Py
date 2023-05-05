@@ -59,7 +59,7 @@ def init(pc):
 #
 
 def commands_const(pc, pcAct):
-    for act,arg in pcAct:        
+    for act,arg in pcAct.items():        
         if act == "console":    debug.cmd_prompt(globals(), locals())
         elif act == "last cmd": debug.execute_last_cmd(globals(), locals()) 
         elif act == "quit game":rog.end()
@@ -67,7 +67,7 @@ def commands_const(pc, pcAct):
 def commands_pages(pc, pcAct):
     if rog.Rogue.menu_key_listener_is_paused():
         return
-    for act,arg in pcAct:
+    for act,arg in pcAct.items():
         if act == "message history" :
             rog.routine_print_msgHistory()
             return
@@ -100,7 +100,7 @@ def commands(pc, pcAct):
 
     directional_command = 'move'
     
-    for act,arg in pcAct:
+    for act,arg in pcAct.items():
 
 ##        print(act)
 ##        print(arg)

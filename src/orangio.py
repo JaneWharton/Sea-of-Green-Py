@@ -1,55 +1,3 @@
-'''
-    orangIO
-    (Orange I/O)
-        An input/output extension for tcod Python
-
-    There is an error where non-numpad keys are not working on laptop
-    Numerical keys are not working on desktop PC
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Alpha: This module is currently in Alpha mode
-        It is usable but not very user-friendly,
-        and has a lot of dependencies.
-
-    This extension to tcod allows you to easily do:
-        - key commands with any combination of Shift, Ctrl, and Alt
-        - text input with blinking cursor
-        - "waiting" for a certain input
-
-    How to use this module:
-
-    Call init_keyBindings during the initialization of your game.
-    Use the key_get* wrapper functions to interface with the keyboard input.
-    The handle_mousekeys function is the function that allows commands
-        with any combination of Ctrl, Shift and Alt.
-        - To use this function in your game,
-            modify COMMANDS and key_bindings.txt defaults.
-    Call the get_raw_input wrapper function to
-        wrap the tcod key and mouse objects in a tuple.
-    key_bindings.txt
-        To edit key bindings, refer to the comments on key_bindings.txt
-        To change the directory of key_bindings.txt, change the variable
-            "file_keyBindings"
-
-    Example use for key combo inputs:
-    
-        # get input #
-        pcInput=IO.get_raw_input()
-        pcAct=IO.handle_mousekeys(pcInput).items()
-        
-        # process commands #
-        for act,arg in pcAct:
-            if act == "lclick":
-                mousex,mousey,z = arg #unpack command arguments
-                #...
-            if act == "move":
-                dx,dy,dz = arg #unpack command arguments
-                #...
-        
-    
-'''
-
 
 import os
 import tcod
@@ -59,7 +7,7 @@ import textwrap
 from const import *
 import managers   
 import maths
-import word
+##import word
 
 
 
@@ -71,15 +19,6 @@ BLACK=tcod.Color(0,0,0)
 key = tcod.Key()
 mouse = tcod.Mouse()
 
-#this value is the number of alternate key codes for each command.
-    #the number of key codes for each command in key_bindings.txt
-    #MUST MATCH THIS VALUE.
-NUM_ALT_CMDS = 3
-
-
-#directory of "key_bindings.txt"
-file_keyBindings=os.path.join(
-    os.path.curdir,os.path.pardir,"settings","key_bindings.txt")
 
 '''###
 #key_bindings.txt
@@ -118,365 +57,66 @@ file_keyBindings=os.path.join(
     #Note: commands are not case-sensitive.
 ###'''
 
-KEYBINDINGS_TEXT_DEFAULT = '''//file name: {filename}
 
-//These are comments.
-//  All empty lines, and all lines beginning with "//"
-//  (without quotations), are considered to be comments
-//  by the file reader, and are ignored.
-
-//      --- Key Bindings Information ---
-
-//In order to remove one binding, set it to: NONE 
-//Bindings may begin with any combination of shift, ctrl,
-//  and alt, followed by a plus (+) symbol:
-//  "Shift+" OR "Ctrl+" OR "Alt+"
-//Keypad numbers begin with "KP" e.g. "KP5"
-
-//Example key bindings
-//    (note bindings are case-insensitive):
-//  CTRL+ALT+DELETE
-//  shift+=
-//  f
-//  Ctrl+A
-//  none
-//  None
-//  KP8
-
-//The action bound to the last combo will function if and
-//  only if the a button is pressed WHILE the Ctrl button
-//  is being held, and neither Alt nor Shift are also being
-//  pressed down; if the Alt button is also being held, for
-//  instance, the input will be treated as "Ctrl+Alt+a",
-//  which is different from "Ctrl+a".
-
-//Note:
-//  Left and right Ctrl are treated as the same.
-//  Left and right Alt are treated as the same.
-//  Left and right Shift are treated as the same.
-
-//ALERT: NumLock is currently unsupported.
-//  The numpad keys might not work as expected with NumLock on.
-//  Keep NumLock off during play.
-
-//---------\\
-// Bindings |
-//---------//
-
-// display commands / help
-Shift+/
-NONE
-NONE
-
-// Up
-K
-KP8
-NONE
-
-// Left
-H
-KP4
-NONE
-
-// Down
-J
-KP2
-NONE
-
-// Right
-L
-KP6
-NONE
-
-// Diagonal Up-left
-Y
-KP7
-NONE
-
-// Diagonal Down-left
-B
-KP1
-NONE
-
-// Diagonal Down-right
-N
-KP3
-NONE
-
-// Diagonal Up-right
-U
-KP9
-NONE
-
-// Direct Towards Self
-.
-KP5
-NONE
-
-// Enter passageway
-Shift+,
-NONE
-NONE
-
-// Use Module 1
-1
-z
-NONE
-
-// Use Module 2
-2
-x
-NONE
-
-// Use Module 3
-3
-c
-NONE
-
-// context-sensitive action
-SPACE
-NONE
-NONE
-
-// target entity to fire / throw / attack / examine
-t
-NONE
-NONE
-
-// Character page -- show modules, status, progress, etc.
-a
-NONE
-NONE
-
-// examine or Look
-/
-Shift+L
-NONE
-
-// wait
-w
-Ctrl+t
-NONE
-
-// show player location (find player)
-Ctrl+f
-NONE
-NONE
-
-// show message history
-Shift+h
-NONE
-NONE
-
-// quit game
-Alt+q
-NONE
-NONE
-
-//---------\\
-//  MENUS   |
-//---------//
-
-// Menu Up
-UP
-NONE
-NONE
-
-// Menu Left
-LEFT
-NONE
-NONE
-
-// Menu Down
-DOWN
-NONE
-NONE
-
-// Menu Right
-RIGHT
-NONE
-NONE
-
-// Select
-SPACE
-ENTER
-NONE
-
-// Exit
-ESCAPE
-NONE
-NONE
-
-// Page Up
-PAGEUP
-NONE
-NONE
-
-// Page Down
-PAGEDOWN
-NONE
-NONE
-
-// Home
-HOME
-NONE
-NONE
-
-// End
-END
-NONE
-NONE
-
-// Delete
-DELETE
-NONE
-NONE
-
-// Insert
-INSERT
-NONE
-NONE
-
-// Backspace
-BACKSPACE
-NONE
-NONE
-
-//---------\\
-// ADVANCED |
-//---------//
-
-// Shell / command prompt / console
-Ctrl+`
-NONE
-NONE
-
-// Execute last console command (during play)
-Ctrl+Shift+`
-NONE
-NONE
-
-// 
-
-//
-'''.format(filename=file_keyBindings)
-
-'''
-# IMPORTANT!!
-# Order of commands must match order in the key_bindings.txt file. #
-'''
 COMMANDS = {        # translate commands into actions
 
-    'help'          : {'help': True}, # CHANGED ORDERING, TEST TO MAKE SURE IT STILL WORKS.
-    'up'            : {'context-dir': (0, -1,  0,) },
-    'left'          : {'context-dir': (-1, 0,  0,) },
-    'down'          : {'context-dir': (0,  1,  0,) },
-    'right'         : {'context-dir': (1,  0,  0,) },
-    'up-left'       : {'context-dir': (-1, -1, 0,) },
-    'down-left'     : {'context-dir': (-1, 1,  0,) },
-    'down-right'    : {'context-dir': (1,  1,  0,) },
-    'up-right'      : {'context-dir': (1, -1,  0,) },
-    'self'          : {'context-dir': (0,  0,  0,) },
-    'enter-passage' : {'context-dir': (0,  0,  1,) },
-    'use1'          : {'use1': True},
-    'use2'          : {'use2': True},
-    'use3'          : {'use3': True},
-    'context'       : {'context': True},
-    'target-prompt' : {'target-prompt': True},
-    'character-page': {'character-page': True},
-    'look'          : {'look': True},
-    'wait'          : {'wait': True},
-    'find player'   : {'find player': True},
-    'msg history'   : {'message history': True},
-    'quit'          : {'quit game': True},
+    tcod.event.KeySym.SLASH     : {'help': True},
+    tcod.event.KeySym.KP_2      : {'context-dir': (0, -1,  0,) },
+    tcod.event.KeySym.k         : {'context-dir': (0, -1,  0,) },
+    tcod.event.KeySym.KP_4      : {'context-dir': (-1, 0,  0,) },
+    tcod.event.KeySym.h         : {'context-dir': (-1, 0,  0,) },
+    tcod.event.KeySym.KP_2      : {'context-dir': (0,  1,  0,) },
+    tcod.event.KeySym.j         : {'context-dir': (0,  1,  0,) },
+    tcod.event.KeySym.KP_6      : {'context-dir': (1,  0,  0,) },
+    tcod.event.KeySym.l         : {'context-dir': (1,  0,  0,) },
+    tcod.event.KeySym.KP_7      : {'context-dir': (-1, -1, 0,) },
+    tcod.event.KeySym.y         : {'context-dir': (-1, -1, 0,) },
+    tcod.event.KeySym.KP_1      : {'context-dir': (-1, 1,  0,) },
+    tcod.event.KeySym.b         : {'context-dir': (-1, 1,  0,) },
+    tcod.event.KeySym.KP_3      : {'context-dir': (1,  1,  0,) },
+    tcod.event.KeySym.n         : {'context-dir': (1,  1,  0,) },
+    tcod.event.KeySym.KP_9      : {'context-dir': (1, -1,  0,) },
+    tcod.event.KeySym.u         : {'context-dir': (1, -1,  0,) },
+    tcod.event.KeySym.KP_5      : {'context-dir': (0,  0,  0,) },
+    tcod.event.KeySym.PERIOD    : {'context-dir': (0,  0,  0,) },
+    tcod.event.KeySym.e         : {'context-dir': (0,  0,  1,) },
+    tcod.event.KeySym.N1        : {'use1': True},
+    tcod.event.KeySym.z         : {'use1': True},
+    tcod.event.KeySym.N2        : {'use2': True},
+    tcod.event.KeySym.x         : {'use2': True},
+    tcod.event.KeySym.N3        : {'use3': True},
+    tcod.event.KeySym.c         : {'use3': True},
+    tcod.event.KeySym.SPACE     : {'context': True},
+    tcod.event.KeySym.a         : {'character-page': True},
+    tcod.event.KeySym.SEMICOLON : {'look': True},
+    tcod.event.KeySym.f         : {'find player': True},
+    tcod.event.KeySym.m         : {'message history': True},
+    tcod.event.Quit             : {'quit game': True},
 
-    'menu-up'       : {'menu-nav': (0, -1,  0,) },
-    'menu-left'     : {'menu-nav': (-1, 0,  0,) },
-    'menu-down'     : {'menu-nav': (0,  1,  0,) },
-    'menu-right'    : {'menu-nav': (1,  0,  0,) },
-    'select'        : {'select': True},
-    'exit'          : {'exit': True},
-    'pgup'          : {'page up': True},
-    'pgdn'          : {'page down': True},
-    'home'          : {'home': True},
-    'end'           : {'end': True},
-    'delete'        : {'delete': True},
-    'insert'        : {'insert': True},
-    'backspace'     : {'backspace': True},
+    tcod.event.KeySym.UP        : {'menu-nav': (0, -1,  0,) },
+    tcod.event.KeySym.LEFT      : {'menu-nav': (-1, 0,  0,) },
+    tcod.event.KeySym.DOWN      : {'menu-nav': (0,  1,  0,) },
+    tcod.event.KeySym.RIGHT     : {'menu-nav': (1,  0,  0,) },
+    tcod.event.KeySym.RETURN    : {'select': True},
+    tcod.event.KeySym.ESCAPE    : {'exit': True},
+    tcod.event.KeySym.PAGEUP    : {'page up': True},
+    tcod.event.KeySym.PAGEDOWN  : {'page down': True},
+    tcod.event.KeySym.HOME      : {'home': True},
+    tcod.event.KeySym.END       : {'end': True},
+    tcod.event.KeySym.DELETE    : {'delete': True},
+    tcod.event.KeySym.INSERT    : {'insert': True},
+    tcod.event.KeySym.BACKSPACE : {'backspace': True},
     
-    'console'       : {'console': True},
-    'last cmd'      : {'last cmd': True},
+    tcod.event.KeySym.BACKQUOTE : {'console': True},
+    tcod.event.KeySym.N0        : {'last cmd': True},
 }
 
-#-----------------------------------------------------------#
-TEXT_TO_KEY = {     # translate text into key constants
-    'none'      : -1,
-    'kp0'       : tcod.KEY_KP0,
-    'kp1'       : tcod.KEY_KP1,
-    'kp2'       : tcod.KEY_KP2,
-    'kp3'       : tcod.KEY_KP3,
-    'kp4'       : tcod.KEY_KP4,
-    'kp5'       : tcod.KEY_KP5,
-    'kp6'       : tcod.KEY_KP6,
-    'kp7'       : tcod.KEY_KP7,
-    'kp8'       : tcod.KEY_KP8,
-    'kp9'       : tcod.KEY_KP9,
-    'up'        : tcod.KEY_UP,
-    'down'      : tcod.KEY_DOWN,
-    'right'     : tcod.KEY_RIGHT,
-    'left'      : tcod.KEY_LEFT,
-    'space'     : tcod.KEY_SPACE,
-    'tab'       : tcod.KEY_TAB,
-    'enter'     : tcod.KEY_ENTER,
-    'escape'    : tcod.KEY_ESCAPE,
-    'backspace' : tcod.KEY_BACKSPACE,
-    'insert'    : tcod.KEY_INSERT,
-    'delete'    : tcod.KEY_DELETE,
-    'home'      : tcod.KEY_HOME,
-    'end'       : tcod.KEY_END,
-    'pagedown'  : tcod.KEY_PAGEDOWN,
-    'pageup'    : tcod.KEY_PAGEUP,
-    'f1'        : tcod.KEY_F1,
-    'f2'        : tcod.KEY_F2,
-    'f3'        : tcod.KEY_F3,
-    'f4'        : tcod.KEY_F4,
-    'f5'        : tcod.KEY_F5,
-    'f6'        : tcod.KEY_F6,
-    'f7'        : tcod.KEY_F7,
-    'f8'        : tcod.KEY_F8,
-    'f9'        : tcod.KEY_F9,
-    'f10'       : tcod.KEY_F10,
-    'f11'       : tcod.KEY_F11,
-    'f12'       : tcod.KEY_F12,
-}
-VK_TO_CHAR = {      # translate key consants into a char
-    tcod.KEY_KP0     : '0',
-    tcod.KEY_KP1     : '1',
-    tcod.KEY_KP2     : '2',
-    tcod.KEY_KP3     : '3',
-    tcod.KEY_KP4     : '4',
-    tcod.KEY_KP5     : '5',
-    tcod.KEY_KP6     : '6',
-    tcod.KEY_KP7     : '7',
-    tcod.KEY_KP8     : '8',
-    tcod.KEY_KP9     : '9',
-    tcod.KEY_KPDEC   : '.',
-    
-    tcod.KEY_UP          : chr(K_UP),
-    tcod.KEY_DOWN        : chr(K_DOWN),
-    tcod.KEY_RIGHT       : chr(K_RIGHT),
-    tcod.KEY_LEFT        : chr(K_LEFT),
-    tcod.KEY_BACKSPACE   : chr(K_BACKSPACE),
-    tcod.KEY_DELETE      : chr(K_DELETE),
-    tcod.KEY_INSERT      : chr(K_INSERT),
-    tcod.KEY_PAGEUP      : chr(K_PAGEUP),
-    tcod.KEY_PAGEDOWN    : chr(K_PAGEDOWN),
-    tcod.KEY_HOME        : chr(K_HOME),
-    tcod.KEY_END         : chr(K_END),
-    tcod.KEY_ENTER       : chr(K_ENTER),
-    tcod.KEY_KPENTER     : chr(K_ENTER),
-    tcod.KEY_ESCAPE      : chr(K_ESCAPE),
-}
+
+
+
+
+
+
 
 
 
@@ -539,6 +179,34 @@ class Cursor:
 # bool insert       begin in "insert" mode?
 #
 
+VK_TO_CHAR = {      # translate key consants into a char
+    tcod.KEY_KP0     : '0',
+    tcod.KEY_KP1     : '1',
+    tcod.KEY_KP2     : '2',
+    tcod.KEY_KP3     : '3',
+    tcod.KEY_KP4     : '4',
+    tcod.KEY_KP5     : '5',
+    tcod.KEY_KP6     : '6',
+    tcod.KEY_KP7     : '7',
+    tcod.KEY_KP8     : '8',
+    tcod.KEY_KP9     : '9',
+    tcod.KEY_KPDEC   : '.',
+    
+    tcod.KEY_UP          : chr(K_UP),
+    tcod.KEY_DOWN        : chr(K_DOWN),
+    tcod.KEY_RIGHT       : chr(K_RIGHT),
+    tcod.KEY_LEFT        : chr(K_LEFT),
+    tcod.KEY_BACKSPACE   : chr(K_BACKSPACE),
+    tcod.KEY_DELETE      : chr(K_DELETE),
+    tcod.KEY_INSERT      : chr(K_INSERT),
+    tcod.KEY_PAGEUP      : chr(K_PAGEUP),
+    tcod.KEY_PAGEDOWN    : chr(K_PAGEDOWN),
+    tcod.KEY_HOME        : chr(K_HOME),
+    tcod.KEY_END         : chr(K_END),
+    tcod.KEY_ENTER       : chr(K_ENTER),
+    tcod.KEY_KPENTER     : chr(K_ENTER),
+    tcod.KEY_ESCAPE      : chr(K_ESCAPE),
+}
 class TextInputManager(managers.Manager): #Manager_Input | ManagerInput
     
     def __init__(self, x,y, w,h, default,mode,insert):
@@ -767,62 +435,6 @@ class TextInputManager(managers.Manager): #Manager_Input | ManagerInput
 # functions #
 #-----------#
 
-# help page
-def render_help() -> str: # may not display all commands
-    return ''' ~~~~~ Help / Command List ~~~~~
-
-Command =================== Default Key Combo
-
- ~~~~~ Global commands ~~~~~
-show this help page ======= Shift+/
-
- ~~~~~ Movement controls ~~~~~
-# Default movement controls use vim keys or keypad numbers
-
-north ===================== k -or- keypad 8
-west ====================== h -or- keypad 4
-south ===================== j -or- keypad 2
-east ====================== l -or- keypad 6
-northwest ================= y -or- keypad 7
-southwest ================= b -or- keypad 1
-southeast ================= n -or- keypad 3
-northeast ================= u -or- keypad 9
-towards self ============== . -or- keypad 5
-up ======================== Shift+,
-down ====================== Shift+.
-
- ~~~~~ Basic controls ~~~~~
-perform action ============ Space
-
- ~~~~~ Movement controls ~~~~~
-
-'''
-
-
-#key functions
-def key_getchar(k):
-    '''
-    # we add 256 here to differentiate character (text) codes from
-    # special key codes, like NumLock, which happens to have the same
-    # integer code (62) as > (greater than symbol), for example.
-    '''
-    return k + 256
-def key_get_pressed():      # get both vk and text in one variable
-    k = tcod.KEY_NONE
-    if tcod.console_is_key_pressed(key.vk) : k = key.vk 
-    if k == tcod.KEY_CHAR : k = key_getchar(key.c)
-    return k
-def key_get_special_combo(k):   # combine shift,ctrl,alt, and key press
-    shift    =  key.shift
-    ctrl     = (key.lctrl or key.rctrl)
-    alt      = (key.lalt  or key.ralt )
-    return (k, (shift, ctrl, alt,),)
-
-# files #
-
-#is line a "comment"? Return whether string line should be ignored.
-def file_is_line_comment(line):
-    return ((line[0]=='/' and line[1]=='/') or line[0]=='\n')
 
 # tcod #
 
@@ -852,27 +464,7 @@ def get_raw_input():
         | tcod.EVENT_MOUSE_RELEASE,  # or release, NOT mouse move event.
         key, mouse)
     return (key,mouse,)
-#
-#
-# handle_mousekeys
-#
-# convert keyboard and mouse input into player commands
-# and return the command as a dict
-#
-def handle_mousekeys(keymouse):
-    key,mouse=keymouse
-    
-    # Mouse #
 
-    if mouse.lbutton_pressed:   return {'lclick': (mouse.cx,mouse.cy,0,) }
-    if mouse.rbutton_pressed:   return {'rclick': (mouse.cx,mouse.cy,0,) }
-    
-    # Keys #
-    
-    k = key_get_pressed()
-    combined = key_get_special_combo(k)
-    
-    return COMMANDS.get(bind.get(combined, None), {})
 
 #Input
 #wrapper function to get a simple input from the user
@@ -885,115 +477,53 @@ def Input(x,y, w=1,h=1, default='',mode='text',insert=False):
     manager.close()
     return result
 
-#
-# key bindings
-#
 
-bind={}
-NO_KEY=(-1,(False,False,False,),) # NULL key constant
-
-# init_keyBindings
-# call during setup to initialize the keyboard controls
-def init_keyBindings():
-    try:
-        _init_keyBindings()
-    except FileNotFoundError:
-        print("'key_bindings.txt' file not found. Creating new file from defaults...")
-        _keyBindings_writeFromDefault()
-        _init_keyBindings()
-
-#
-# *DO NOT CALL THIS FUNCTION*
-# call init_keyBindings instead
-# _init_keyBindings
-# read from a file and put key binding info into dict bind.
-#
-def _init_keyBindings():
-        
-    global bind
-
-    codes = []  # list of key codes 0-511 (0-255 and an additional 256
-                # for special key inputs like NumPad digits)
-    combin = [] # list of tuples (shift,ctrl,alt) for key combinations
-                
-    numCommands=0   #counter
-    
-    with open(file_keyBindings, 'r') as bindings:
-        for line in bindings:
-            if file_is_line_comment(line): continue #ignore comments
-
-            #read this line as a command
-            numCommands += 1
+def wait_for_command(context):
+    for event in tcod.event.wait():
+##        context.convert_event(event)
+        if isinstance(event, tcod.event.Quit):
+            print(event)
+            raise SystemExit()
+        if isinstance(event, tcod.event.KeyDown):
+            if event.sym in COMMANDS.keys():
+                command = COMMANDS[event.sym]
+##                print("command: ", command)
+                return command
+    return {"None" : True}
             
-            #init
-            line=word.remove_blankspace(line) #ignore white space
-            line=line.lower() #not case-sensitive
-            
-            #NONE
-            if "none" in line: #no key set, still need to put something in the list
-                combin.append( (False,False,False,) )
-                codes.append(   -1  ) # NULL key
-                continue
-            
-            # Key combinations #
-            
-            delete=0
-            if 'shift+' in line:
-                delete+=6
-                _shf = True
-            else: _shf = False
-            if 'ctrl+' in line:
-                delete+=5
-                _ctl = True
-            else: _ctl = False
-            if 'alt+' in line:
-                delete+=4
-                _alt = True
-            else: _alt = False
-            combinData=(_shf,_ctl,_alt,)
-            if delete: line=line[delete:]
-            
-            if line[1] == '\n':     # character keys
-                codeData=key_getchar(ord(line[0]))
-            else:                   # special keys
-                new = TEXT_TO_KEY.get(line[:-1],-1)
-                codeData=new
-            
-            combin.append( combinData )
-            codes.append(   codeData  )
-        #
-        
-    print("Key bindings loaded from '{}'".format(file_keyBindings))
-    
-    n = NUM_ALT_CMDS
-    # error checking
-    if not ( numCommands == n*len(COMMANDS.keys()) ):
-        print("number of commands: ", numCommands)
-        print("number expected: ", n*len(COMMANDS.keys()))
-        raise(Error_wrongNumberCommandsLoaded)
-    # bind special combined key input to commands #
-    try:
-        for i,v in enumerate(COMMANDS.keys()):
-            for j in range(n):
-                index = i*n + j
-                bind.update({ (codes[index], combin[index],) : v })
-    except:
-        raise(Error_wrongNumberCommandsLoaded)
-#end def _init_keyBindings
-
-def _keyBindings_writeFromDefault():
-    try:
-        with open(file_keyBindings,"w+") as file:
-            file.write(KEYBINDINGS_TEXT_DEFAULT)
-            print("'key_bindings.txt' created.")
-    except:
-        print("FATAL ERROR! Failed to create key_bindings.txt")
 
 
+# help page
+def render_help() -> str: # may not display all commands
+    return ''' ~~~~~ Help / Command List ~~~~~
 
+Command =================== Default Key Combo
 
+ ~~~~~ Global commands ~~~~~
+show this help page ======= Shift+/
+show submarine status ===== a
 
+ ~~~~~ Movement controls ~~~~~
+# Default movement controls use vim keys or keypad numbers
 
+up ======================== k -or- keypad 8 -or- UP
+left ====================== h -or- keypad 4 -or- LEFT
+down ====================== j -or- keypad 2 -or- DOWN
+right ===================== l -or- keypad 6 -or- RIGHT
+up-left =================== y -or- keypad 7
+down-left ================= b -or- keypad 1
+down-right ================ n -or- keypad 3
+up-right ================== u -or- keypad 9
+towards self ============== . -or- keypad 5
+enter passage ============= Shift+.
 
+ ~~~~~ Basic controls ~~~~~
+context action ============ Space
+use module 1 ============== 1 -or- Z
+use module 2 ============== 2 -or- X
+use module 3 ============== 3 -or- C
+use module 4 ============== 4 -or- V
+
+'''
 
 

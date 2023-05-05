@@ -549,6 +549,8 @@ def is_in_grid_x(x):    return (x>=0 and x<ROOMW)
 def is_in_grid_y(y):    return (y>=0 and y<ROOMH)
 def is_in_grid(x,y):    return (x>=0 and x<ROOMW and y>=0 and y<ROOMH)
 
+def cardinal_distance(x1,y1,x2,y2):
+    return abs(x1-x2) + abs(y1-y2)
 def tradius(x,y,r):
     r = int(r)
     if r==0:
@@ -557,7 +559,7 @@ def tradius(x,y,r):
     for tx in range(-r, r+1):
         for ty in range(-r, r+1):
             xx,yy = (x+tx, y+ty,)
-            if (abs(tx) + abs(ty) <= r and is_in_grid(xx,yy)):
+            if (cardinal_distance(xx,yy,x,y) <= r and is_in_grid(xx,yy)):
                 tiles.append((xx,yy))
     return tiles
 
@@ -875,8 +877,8 @@ def can_see(ent,x,y,sight=None): # circular FOV function
     pos = world.component_for_entity(ent, cmp.Position)
     senseSight = world.component_for_entity(ent, cmp.SenseSight)
     if sight is None: sight=senseSight.sense
-    dist = int(maths.dist(pos.x,pos.y, x,y))
-    if ( getfovmap(senseSight.fovID).fov[y][x] and dist <= sight ): # <- circle-ize
+    dist = cardinal_distance(x,y,pos.x,pos.y)
+    if ( dist <= sight and getfovmap(senseSight.fovID).fov[y][x] ): # <- circle-ize
         globalreturn(dist,light)
         return True
     return False
